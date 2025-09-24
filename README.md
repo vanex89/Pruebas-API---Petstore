@@ -4,14 +4,14 @@ Validación de los endpoints principales de **Petstore** para el recurso **Pet**
 Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos de respuesta ≤ **2000 ms**, además de consistencia de datos entre lo enviado y lo recibido.
 
 
-## 1) Alcance
+ 1) Alcance
 
 - Recurso cubierto: **`/pet`**
 - Operaciones: **POST, GET, PUT, DELETE**
 - Tipos de casos: **positivos** y **negativos** (entrada inválida, límites de campo, id inexistente, idempotencia, duplicidad, caracteres especiales, etc.)
 
 
-## 2) Requisitos
+ 2) Requisitos
 
 - **Postman** (para importar y ejecutar la colección).
 - **Node.js** + **Newman** (opcional pero recomendado para ejecución por CLI y reporte HTML).
@@ -20,7 +20,7 @@ Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos
 > Entregable esperado: repositorio público con estructura clara y README con instrucciones de ejecución.
 
 
-## 3) Variables (Environment de Postman)
+ 3) Variables (Environment de Postman)
 
 Variables empleadas:
 - `baseUrl` → URL base de la API (por defecto: `https://petstore.swagger.io/v2`)
@@ -29,7 +29,7 @@ Variables empleadas:
 > Importa el **environment** incluido en `/postman` y verifica/ajusta estos valores según sea necesario.
 
 
-## 4) Estructura del repositorio
+ 4) Estructura del repositorio
 
 ```
 Pruebas-API---Petstore/
@@ -47,7 +47,7 @@ Pruebas-API---Petstore/
 ```
 
 
-## 5) Cobertura de pruebas (resumen)
+ 5) Cobertura de pruebas (resumen)
 
 ### POST `/pet`
 - **POST-01**: Crear pet válido (200, JSON, t ≤ 2000 ms, campos clave, coherencia de id/name).
@@ -78,7 +78,7 @@ Pruebas-API---Petstore/
 - **DELETE-05**: `petId` con caracteres especiales/espacios/unicode (400/404; sin stacktrace/HTML).
 
 
-## 6) Cómo ejecutar
+ 6) Cómo ejecutar
 
 ### Opción A — Postman (GUI)
 1. **Importar**:
@@ -102,7 +102,7 @@ newman run postman/Pruebas_API_Petstore.postman_collection.json   -e postman/Pru
 
 ---
 
-## 7) Evidencias
+ 7) Evidencias
 
 Screenshot
 https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/POST%20-%20pet
@@ -113,7 +113,7 @@ https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/DELETE%20
 Video Run
 https://github.com/vanex89/Pruebas-API---Petstore/blob/5f03756184e3670f940bde2736a2f0b8da629fef/Evidencias/V%C3%ADdeo%20sin%20t%C3%ADtulo%20%E2%80%90%20Hecho%20con%20Clipchamp.mp4
 
-## 8) Notas y troubleshooting
+ 8) Notas y troubleshooting
 
 - **Entorno público Petstore**: ocasionalmente la persistencia puede variar (p. ej., un `POST` no queda disponible inmediatamente o retorna 404 en lecturas posteriores).  
   Los casos contemplan este comportamiento y **documentan** resultados alternativos sin falsear positivamente.
@@ -121,7 +121,7 @@ https://github.com/vanex89/Pruebas-API---Petstore/blob/5f03756184e3670f940bde273
 - **Latencia**: se verifica `responseTime ≤ timeoutMs` (por defecto 2000 ms). Ajusta si tu red es muy lenta.
 
 
-## 9) Scripts útiles (opcional)
+ 9) Scripts útiles (opcional)
 
 **Windows – doble clic**: crea `run_api_tests.cmd` con:
 ```cmd
