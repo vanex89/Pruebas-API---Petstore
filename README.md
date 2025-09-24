@@ -1,9 +1,8 @@
-# QA API Tests – Petstore (Postman + Newman)
+# QA API Tests – Petstore
 
 Validación de los endpoints principales de **Petstore** para el recurso **Pet**, cubriendo CRUD (Create, Read, Update, Delete) con **casos positivos y negativos**.  
 Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos de respuesta ≤ **2000 ms**, además de consistencia de datos entre lo enviado y lo recibido.
 
----
 
 ## 1) Alcance
 
@@ -11,7 +10,6 @@ Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos
 - Operaciones: **POST, GET, PUT, DELETE**
 - Tipos de casos: **positivos** y **negativos** (entrada inválida, límites de campo, id inexistente, idempotencia, duplicidad, caracteres especiales, etc.)
 
----
 
 ## 2) Requisitos
 
@@ -21,7 +19,6 @@ Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos
 
 > Entregable esperado: repositorio público con estructura clara y README con instrucciones de ejecución.
 
----
 
 ## 3) Variables (Environment de Postman)
 
@@ -31,7 +28,6 @@ Variables empleadas:
 
 > Importa el **environment** incluido en `/postman` y verifica/ajusta estos valores según sea necesario.
 
----
 
 ## 4) Estructura del repositorio
 
@@ -41,12 +37,15 @@ Pruebas-API---Petstore/
 │  ├─ Pruebas_API_Petstore.postman_collection.json
 │  └─ Pruebas_API_Petstore.postman_environment.json
 ├─ evidence/
-│  └─ run-report.html                 # se genera al correr con Newman (opcional)
+|  ├─ DELETE - pet{petId}
+|  ├─ GET - pet{petId}
+|  ├─ POST - pet
+|  ├─ PUT - pet
+|  └─ Pruebas API - Petstore.postman_test_run.json
 ├─ .gitignore
 └─ README.md
 ```
 
----
 
 ## 5) Cobertura de pruebas (resumen)
 
@@ -78,7 +77,6 @@ Pruebas-API---Petstore/
 - **DELETE-04**: Borrado doble (idempotencia): primera vez 200/204; segunda, 404/“not found”.
 - **DELETE-05**: `petId` con caracteres especiales/espacios/unicode (400/404; sin stacktrace/HTML).
 
----
 
 ## 6) Cómo ejecutar
 
@@ -106,10 +104,14 @@ newman run postman/Pruebas_API_Petstore.postman_collection.json   -e postman/Pru
 
 ## 7) Evidencias
 
-- Reporte HTML de Newman: `evidence/run-report.html` (inclúyelo en commit o compártelo como artefacto).
-- Puedes adjuntar capturas o un breve video del run si lo deseas.
+Screenshot
+https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/POST%20-%20pet
+https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/GET%20-%20pet%7BpetId%7D
+https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/PUT%20-%20pet
+https://github.com/vanex89/Pruebas-API---Petstore/tree/main/Evidencias/DELETE%20-%20pet%7BpetId%7D
 
----
+Video Run
+https://github.com/vanex89/Pruebas-API---Petstore/blob/5f03756184e3670f940bde2736a2f0b8da629fef/Evidencias/V%C3%ADdeo%20sin%20t%C3%ADtulo%20%E2%80%90%20Hecho%20con%20Clipchamp.mp4
 
 ## 8) Notas y troubleshooting
 
@@ -118,7 +120,6 @@ newman run postman/Pruebas_API_Petstore.postman_collection.json   -e postman/Pru
 - **Mensajes de error**: las pruebas negativas validan respuestas **controladas** (sin *stack traces* ni HTML crudo) y términos genéricos como `invalid/bad/not found/format/number/exception`.
 - **Latencia**: se verifica `responseTime ≤ timeoutMs` (por defecto 2000 ms). Ajusta si tu red es muy lenta.
 
----
 
 ## 9) Scripts útiles (opcional)
 
@@ -127,23 +128,11 @@ newman run postman/Pruebas_API_Petstore.postman_collection.json   -e postman/Pru
 @echo off
 newman run postman\Pruebas_API_Petstore.postman_collection.json ^
   -e postman\Pruebas_API_Petstore.postman_environment.json ^
-  -r htmlextra --reporter-htmlextra-export evidenceun-report.html
-echo Reporte generado en: evidenceun-report.html
+  -r htmlextra --reporter-htmlextra-export evidence
+un-report.html
+echo Reporte generado en: evidence
+un-report.html
 pause
 ```
+Autor: **Vanessa “Vane” Velásquez** (`vanex89`)
 
----
-
-## 10) CI/CD (opcional)
-
-Puedes añadir un workflow de **GitHub Actions** que:
-- Instale Node,
-- ejecute Newman en cada push/PR,
-- y suba `evidence/run-report.html` como artefacto.
-
----
-
-## 11) Contacto y licencia
-
-- Autor: **Vanessa “Vane” Velásquez** (`vanex89`)
-- Licencia: uso académico / portafolio (sin licencia específica).
