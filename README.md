@@ -100,7 +100,6 @@ newman run postman/Pruebas_API_Petstore.postman_collection.json   -e postman/Pru
 
 > Si prefieres evitar instalaciones globales, agrega `newman` y `newman-reporter-htmlextra` como `devDependencies` y define el script `npm run test:api`.
 
----
 
  7) Evidencias
 
