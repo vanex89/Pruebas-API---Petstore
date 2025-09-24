@@ -1,4 +1,4 @@
-# QA API Tests – Petstore
+ QA API Tests – Petstore
 
 Validación de los endpoints principales de **Petstore** para el recurso **Pet**, cubriendo CRUD (Create, Read, Update, Delete) con **casos positivos y negativos**.  
 Las aserciones verifican: códigos HTTP esperados, `Content-Type` JSON y tiempos de respuesta ≤ **2000 ms**, además de consistencia de datos entre lo enviado y lo recibido.
