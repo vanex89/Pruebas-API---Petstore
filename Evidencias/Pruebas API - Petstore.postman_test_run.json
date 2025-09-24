@@ -1,0 +1,1249 @@
+{
+	"id": "7ca87140-297f-4a02-8a25-0607de852f42",
+	"name": "Pruebas API - Petstore",
+	"timestamp": "2025-09-24T03:43:19.674Z",
+	"collection_id": "17642252-655238c0-765c-4094-9264-ec51a02edd3e",
+	"folder_id": 0,
+	"environment_id": "17642252-73eba6ea-0f7a-4921-b0b4-f56190f63dbb",
+	"totalPass": 117,
+	"delay": "100",
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-09-24T03:43:10.306Z",
+	"totalFail": 0,
+	"results": [
+		{
+			"id": "f46ceb5c-25fd-4525-a367-34ca577a5578",
+			"name": "API-PET-POST-01 - Positivo | Crear pet válido",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 419,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status 200": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"JSON válido con campos clave": true,
+				"id y name coherentes con lo enviado": true
+			},
+			"testPassFailCounts": {
+				"Status 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"JSON válido con campos clave": {
+					"pass": 1,
+					"fail": 0
+				},
+				"id y name coherentes con lo enviado": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				419
+			],
+			"allTests": [
+				{
+					"Status 200": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"JSON válido con campos clave": true,
+					"id y name coherentes con lo enviado": true
+				}
+			]
+		},
+		{
+			"id": "cbcee4fa-d5e5-4ca2-ace4-76c540064526",
+			"name": "API-PET-POST-02 - Negativo | JSON malformado / estructura inválida",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 80,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"Status de error (4xx)": true,
+				"Respuesta controlada (no 5xx)": true,
+				"No se creó recurso con attemptedId (GET debe ser 404)": true
+			},
+			"testPassFailCounts": {
+				"Status de error (4xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No se creó recurso con attemptedId (GET debe ser 404)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				80
+			],
+			"allTests": [
+				{
+					"Status de error (4xx)": true,
+					"Respuesta controlada (no 5xx)": true,
+					"No se creó recurso con attemptedId (GET debe ser 404)": true
+				}
+			]
+		},
+		{
+			"id": "0dc1b7e1-afa2-4fbb-ace8-ce0f21b7bbb5",
+			"name": "API-PET-POST-03 - Negativo | Valor fuera de catálogo en status",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 78,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Status esperado (400/422 o 200)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Body coherente con intento inválido (id + unknown_status)": true,
+				"petId de la suite permanece sin cambios": true,
+				"Respuesta no persistente (GET 404) — documentado": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/422 o 200)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Body coherente con intento inválido (id + unknown_status)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"petId de la suite permanece sin cambios": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Respuesta no persistente (GET 404) — documentado": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				78
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Status esperado (400/422 o 200)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Body coherente con intento inválido (id + unknown_status)": true,
+					"petId de la suite permanece sin cambios": true,
+					"Respuesta no persistente (GET 404) — documentado": true
+				}
+			]
+		},
+		{
+			"id": "de4dfe98-7d29-49f1-874b-07ec9f167763",
+			"name": "API-PET-POST-04 - Negativo | Duplicidad de id",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 77,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Status esperado (400/409/422 o 2xx)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Comportamiento 2xx documentado (upsert o no-op)": true,
+				"Sin cambios (no-op con 2xx) — documentado": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/409/422 o 2xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Comportamiento 2xx documentado (upsert o no-op)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin cambios (no-op con 2xx) — documentado": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				77
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Status esperado (400/409/422 o 2xx)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Comportamiento 2xx documentado (upsert o no-op)": true,
+					"Sin cambios (no-op con 2xx) — documentado": true
+				}
+			]
+		},
+		{
+			"id": "63884324-06fb-4feb-b3ee-b5bf945aab20",
+			"name": "API-PET-POST-05 - Negativo | Tamaño/extremos de campos (name vacío o extremo)",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 78,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Status esperado (400/422 o 2xx observado)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Body procesable (aceptado/sanitizado)": true,
+				"Id devuelto coincide": true,
+				"petId de la suite permanece sin cambios": true,
+				"No persistente (GET 404) — documentado": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/422 o 2xx observado)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Body procesable (aceptado/sanitizado)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Id devuelto coincide": {
+					"pass": 1,
+					"fail": 0
+				},
+				"petId de la suite permanece sin cambios": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No persistente (GET 404) — documentado": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				78
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Status esperado (400/422 o 2xx observado)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Body procesable (aceptado/sanitizado)": true,
+					"Id devuelto coincide": true,
+					"petId de la suite permanece sin cambios": true,
+					"No persistente (GET 404) — documentado": true
+				}
+			]
+		},
+		{
+			"id": "4184641f-332f-4c0c-8881-689af3bf35f4",
+			"name": "API-PET-GET-01 - Positivo | Consultar pet existente",
+			"url": "https://petstore.swagger.io/v2/pet/1758685390915",
+			"time": 78,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Precondición: siembra ejecutada": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 200": true,
+				"Body con id/name/status": true,
+				"id = petId": true,
+				"name/status coherentes con baseline": true
+			},
+			"testPassFailCounts": {
+				"Precondición: siembra ejecutada": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Body con id/name/status": {
+					"pass": 1,
+					"fail": 0
+				},
+				"id = petId": {
+					"pass": 1,
+					"fail": 0
+				},
+				"name/status coherentes con baseline": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				78
+			],
+			"allTests": [
+				{
+					"Precondición: siembra ejecutada": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 200": true,
+					"Body con id/name/status": true,
+					"id = petId": true,
+					"name/status coherentes con baseline": true
+				}
+			]
+		},
+		{
+			"id": "88b8758c-910a-420a-9023-876a9b1b56ba",
+			"name": "API-PET-GET-02 - Negativo | petId inexistente",
+			"url": "https://petstore.swagger.io/v2/pet/1758686393655",
+			"time": 78,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 404": true,
+				"Mensaje 'not found' controlado": true,
+				"Sin datos del recurso (no id/name/status)": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 404": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje 'not found' controlado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin datos del recurso (no id/name/status)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				78
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 404": true,
+					"Mensaje 'not found' controlado": true,
+					"Sin datos del recurso (no id/name/status)": true
+				}
+			]
+		},
+		{
+			"id": "9928dcd9-fe43-40be-99a1-b5a4896e3a39",
+			"name": "API-PET-GET-03 - Negativo | petId no numérico / formato inválido",
+			"url": "https://petstore.swagger.io/v2/pet/abc-not-number?Accept=application/json",
+			"time": 83,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 400/404 por formato inválido": true,
+				"Mensaje de error controlado": true,
+				"Sin fuga de stack trace/HTML": true,
+				"Sin datos del recurso (no id/name/status)": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 400/404 por formato inválido": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje de error controlado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin fuga de stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin datos del recurso (no id/name/status)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				83
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 400/404 por formato inválido": true,
+					"Mensaje de error controlado": true,
+					"Sin fuga de stack trace/HTML": true,
+					"Sin datos del recurso (no id/name/status)": true
+				}
+			]
+		},
+		{
+			"id": "485f9a29-35fb-4576-8e27-db6494e12f7c",
+			"name": "API-PET-GET-04 - Negativo | petId vacío o nulo",
+			"url": "https://petstore.swagger.io/v2/pet/",
+			"time": 80,
+			"responseCode": {
+				"code": 405,
+				"name": "Method Not Allowed"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Comportamiento no esperado (p.ej. 405) — documentado": true,
+				"Mensaje de error controlado": true,
+				"Sin campos del recurso (id/name/status)": true,
+				"Sin stack trace/HTML": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Comportamiento no esperado (p.ej. 405) — documentado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje de error controlado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin campos del recurso (id/name/status)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				80
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Comportamiento no esperado (p.ej. 405) — documentado": true,
+					"Mensaje de error controlado": true,
+					"Sin campos del recurso (id/name/status)": true,
+					"Sin stack trace/HTML": true
+				}
+			]
+		},
+		{
+			"id": "49078e25-f4ed-40fe-bd74-731c1f902f82",
+			"name": "API-PET-GET-05 - Negativo | petId con caracteres especiales",
+			"url": "https://petstore.swagger.io/v2/pet/id%20%C3%B1%40%23%24%20%25%2020",
+			"time": 83,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 400/404 por id con caracteres especiales": true,
+				"Mensaje de error controlado": true,
+				"Sin campos del recurso (id/name/status)": true,
+				"Sin stack trace/HTML": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 400/404 por id con caracteres especiales": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje de error controlado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin campos del recurso (id/name/status)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				83
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 400/404 por id con caracteres especiales": true,
+					"Mensaje de error controlado": true,
+					"Sin campos del recurso (id/name/status)": true,
+					"Sin stack trace/HTML": true
+				}
+			]
+		},
+		{
+			"id": "8c50a2cb-51db-4d1e-b717-0759ce67a1ef",
+			"name": "API-PET-PUT-01 - Positivo | Actualizar nombre y estado",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 77,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 200": true,
+				"Id devuelto coincide": true,
+				"Name/status actualizados en body": true,
+				"Persistencia verificada por GET": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Id devuelto coincide": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Name/status actualizados en body": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Persistencia verificada por GET": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				77
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 200": true,
+					"Id devuelto coincide": true,
+					"Name/status actualizados en body": true,
+					"Persistencia verificada por GET": true
+				}
+			]
+		},
+		{
+			"id": "9cf4ad82-22e9-413a-a561-dc8ef8cd583a",
+			"name": "API-PET-PUT-02 - Negativo | Falta id en body",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 80,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Status esperado (400/422 o 200 documentado)": true,
+				"Baseline intacta tras PUT sin id (GET)": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/422 o 200 documentado)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Baseline intacta tras PUT sin id (GET)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				80
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Status esperado (400/422 o 200 documentado)": true,
+					"Baseline intacta tras PUT sin id (GET)": true
+				}
+			]
+		},
+		{
+			"id": "f173567a-4f9a-45b8-a06c-c9b130eeda05",
+			"name": "API-PET-PUT-03 - Negativo | status inválido en actualización",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 76,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Respuesta controlada (no 5xx)": true,
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Status esperado (400/422 o 200 documentado)": true,
+				"Persistencia (GET) — no se aceptó status inválido": true
+			},
+			"testPassFailCounts": {
+				"Respuesta controlada (no 5xx)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/422 o 200 documentado)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Persistencia (GET) — no se aceptó status inválido": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				76
+			],
+			"allTests": [
+				{
+					"Respuesta controlada (no 5xx)": true,
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Status esperado (400/422 o 200 documentado)": true,
+					"Persistencia (GET) — no se aceptó status inválido": true
+				}
+			]
+		},
+		{
+			"id": "5d72e4ed-a6d0-4ca1-8719-7ff24b4fc889",
+			"name": "API-PET-PUT-04 - Negativo | Actualizar petId inexistente",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 82,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"404 o comportamiento documentado": true,
+				"No upsert (GET ⇒ 404)": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"404 o comportamiento documentado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No upsert (GET ⇒ 404)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				82
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"404 o comportamiento documentado": true,
+					"No upsert (GET ⇒ 404)": true
+				}
+			]
+		},
+		{
+			"id": "8702dd6b-fd1a-42ee-9aba-2655f69b6773",
+			"name": "API-PET-PUT-05 - No-op / Idempotencia | Enviar mismos datos sin cambios",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 78,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Content-Type JSON": true,
+				"Tiempo ≤ 2000 ms": true,
+				"HTTP 200 (no-op)": true,
+				"id devuelto = petId": true,
+				"Sin cambios: name/status iguales a lo enviado": true,
+				"Persistencia por GET (no cambios)": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"HTTP 200 (no-op)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"id devuelto = petId": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin cambios: name/status iguales a lo enviado": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Persistencia por GET (no cambios)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				78
+			],
+			"allTests": [
+				{
+					"Content-Type JSON": true,
+					"Tiempo ≤ 2000 ms": true,
+					"HTTP 200 (no-op)": true,
+					"id devuelto = petId": true,
+					"Sin cambios: name/status iguales a lo enviado": true,
+					"Persistencia por GET (no cambios)": true
+				}
+			]
+		},
+		{
+			"id": "d308b4ce-d3c5-4fbb-9548-1aade516f498",
+			"name": "00-Seed (POST)",
+			"url": "https://petstore.swagger.io/v2/pet",
+			"time": 84,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Semilla creada (200/201)": true,
+				"Echo correcto del id": true
+			},
+			"testPassFailCounts": {
+				"Semilla creada (200/201)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Echo correcto del id": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				84
+			],
+			"allTests": [
+				{
+					"Semilla creada (200/201)": true,
+					"Echo correcto del id": true
+				}
+			]
+		},
+		{
+			"id": "008f7253-32e6-4e46-affc-41b3bcd9f08d",
+			"name": "API-PET-DELETE-01 - Positivo | Eliminar pet existente",
+			"url": "https://petstore.swagger.io/v2/pet/1758685397351",
+			"time": 77,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Precondición: delId existe en colección": true,
+				"Content-Type JSON (si presente)": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Status esperado (200/204 o 404 documentado)": true,
+				"Borrado verificado por GET (404)": true
+			},
+			"testPassFailCounts": {
+				"Precondición: delId existe en colección": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Content-Type JSON (si presente)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (200/204 o 404 documentado)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Borrado verificado por GET (404)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				77
+			],
+			"allTests": [
+				{
+					"Precondición: delId existe en colección": true,
+					"Content-Type JSON (si presente)": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Status esperado (200/204 o 404 documentado)": true,
+					"Borrado verificado por GET (404)": true
+				}
+			]
+		},
+		{
+			"id": "1e45d3fb-c363-4e7f-8965-7ea5da9708b3",
+			"name": "API-PET-DELETE-02 - Negativo  Eliminar pet inexistente",
+			"url": "https://petstore.swagger.io/v2/pet/1758695398131",
+			"time": 79,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON (si presente)": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Status esperado (200/404)": true,
+				"Mensaje controlado (si 4xx y body con mensaje)": true,
+				"Sin stack trace/HTML": true,
+				"No-upsert: GET /pet/{id} ⇒ 404": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON (si presente)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (200/404)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje controlado (si 4xx y body con mensaje)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No-upsert: GET /pet/{id} ⇒ 404": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				79
+			],
+			"allTests": [
+				{
+					"Content-Type JSON (si presente)": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Status esperado (200/404)": true,
+					"Mensaje controlado (si 4xx y body con mensaje)": true,
+					"Sin stack trace/HTML": true,
+					"No-upsert: GET /pet/{id} ⇒ 404": true
+				}
+			]
+		},
+		{
+			"id": "ce796887-7c96-4179-a0fd-90fcf0a41ed9",
+			"name": "API-PET-DELETE-03 - Negativo | petId no numérico",
+			"url": "https://petstore.swagger.io/v2/pet/abc-not-number",
+			"time": 81,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON (si presente)": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Status esperado (400/404)": true,
+				"Mensaje controlado (formato inválido)": true,
+				"Sin stack trace/HTML": true,
+				"No-upsert (GET mismo id inválido ⇒ 400/404)": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON (si presente)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Status esperado (400/404)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje controlado (formato inválido)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No-upsert (GET mismo id inválido ⇒ 400/404)": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				81
+			],
+			"allTests": [
+				{
+					"Content-Type JSON (si presente)": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Status esperado (400/404)": true,
+					"Mensaje controlado (formato inválido)": true,
+					"Sin stack trace/HTML": true,
+					"No-upsert (GET mismo id inválido ⇒ 400/404)": true
+				}
+			]
+		},
+		{
+			"id": "d9c3e70f-84e4-4cf4-a214-6c802ae63e83",
+			"name": "API-PET-DELETE-04 - Negativo | Borrado doble (idempotencia)",
+			"url": "https://petstore.swagger.io/v2/pet/1758685398880",
+			"time": 81,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Content-Type JSON (si presente)": true,
+				"Tiempo ≤ 2000 ms": true,
+				"Idempotencia: 2º DELETE indica que no existe": true,
+				"Sin stack trace/HTML": true,
+				"No-upsert: GET del mismo id ⇒ 404": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON (si presente)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Idempotencia: 2º DELETE indica que no existe": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Sin stack trace/HTML": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No-upsert: GET del mismo id ⇒ 404": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				81
+			],
+			"allTests": [
+				{
+					"Content-Type JSON (si presente)": true,
+					"Tiempo ≤ 2000 ms": true,
+					"Idempotencia: 2º DELETE indica que no existe": true,
+					"Sin stack trace/HTML": true,
+					"No-upsert: GET del mismo id ⇒ 404": true
+				}
+			]
+		},
+		{
+			"id": "70b5ef58-88da-4b6e-8ad3-d47987faac19",
+			"name": "API-PET-DELETE-05 - Negativo | petId con caracteres especiales/espacios",
+			"url": "https://petstore.swagger.io/v2/pet/id%20con%20espacios%20%40!",
+			"time": 81,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {
+				"Content-Type JSON (si presente)": true,
+				"Tiempo ≤ 2000 ms": true,
+				"400/404 por id inválido": true,
+				"Mensaje controlado + sin HTML/stack": true,
+				"GET retorna 404/400 (no existe)": true,
+				"GET sin HTML/stack": true,
+				"No-upsert: GET del mismo id ⇒ 404/400": true
+			},
+			"testPassFailCounts": {
+				"Content-Type JSON (si presente)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Tiempo ≤ 2000 ms": {
+					"pass": 1,
+					"fail": 0
+				},
+				"400/404 por id inválido": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Mensaje controlado + sin HTML/stack": {
+					"pass": 1,
+					"fail": 0
+				},
+				"GET retorna 404/400 (no existe)": {
+					"pass": 1,
+					"fail": 0
+				},
+				"GET sin HTML/stack": {
+					"pass": 1,
+					"fail": 0
+				},
+				"No-upsert: GET del mismo id ⇒ 404/400": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				81
+			],
+			"allTests": [
+				{
+					"Content-Type JSON (si presente)": true,
+					"Tiempo ≤ 2000 ms": true,
+					"400/404 por id inválido": true,
+					"Mensaje controlado + sin HTML/stack": true,
+					"GET retorna 404/400 (no existe)": true,
+					"GET sin HTML/stack": true,
+					"No-upsert: GET del mismo id ⇒ 404/400": true
+				}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 2010,
+	"collection": {
+		"requests": [
+			{
+				"id": "f46ceb5c-25fd-4525-a367-34ca577a5578",
+				"method": "POST"
+			},
+			{
+				"id": "cbcee4fa-d5e5-4ca2-ace4-76c540064526",
+				"method": "POST"
+			},
+			{
+				"id": "0dc1b7e1-afa2-4fbb-ace8-ce0f21b7bbb5",
+				"method": "POST"
+			},
+			{
+				"id": "de4dfe98-7d29-49f1-874b-07ec9f167763",
+				"method": "POST"
+			},
+			{
+				"id": "63884324-06fb-4feb-b3ee-b5bf945aab20",
+				"method": "POST"
+			},
+			{
+				"id": "4184641f-332f-4c0c-8881-689af3bf35f4",
+				"method": "GET"
+			},
+			{
+				"id": "88b8758c-910a-420a-9023-876a9b1b56ba",
+				"method": "GET"
+			},
+			{
+				"id": "9928dcd9-fe43-40be-99a1-b5a4896e3a39",
+				"method": "GET"
+			},
+			{
+				"id": "485f9a29-35fb-4576-8e27-db6494e12f7c",
+				"method": "GET"
+			},
+			{
+				"id": "49078e25-f4ed-40fe-bd74-731c1f902f82",
+				"method": "GET"
+			},
+			{
+				"id": "8c50a2cb-51db-4d1e-b717-0759ce67a1ef",
+				"method": "PUT"
+			},
+			{
+				"id": "9cf4ad82-22e9-413a-a561-dc8ef8cd583a",
+				"method": "PUT"
+			},
+			{
+				"id": "f173567a-4f9a-45b8-a06c-c9b130eeda05",
+				"method": "PUT"
+			},
+			{
+				"id": "5d72e4ed-a6d0-4ca1-8719-7ff24b4fc889",
+				"method": "PUT"
+			},
+			{
+				"id": "8702dd6b-fd1a-42ee-9aba-2655f69b6773",
+				"method": "PUT"
+			},
+			{
+				"id": "d308b4ce-d3c5-4fbb-9548-1aade516f498",
+				"method": "POST"
+			},
+			{
+				"id": "008f7253-32e6-4e46-affc-41b3bcd9f08d",
+				"method": "DELETE"
+			},
+			{
+				"id": "1e45d3fb-c363-4e7f-8965-7ea5da9708b3",
+				"method": "DELETE"
+			},
+			{
+				"id": "ce796887-7c96-4179-a0fd-90fcf0a41ed9",
+				"method": "DELETE"
+			},
+			{
+				"id": "d9c3e70f-84e4-4cf4-a214-6c802ae63e83",
+				"method": "DELETE"
+			},
+			{
+				"id": "70b5ef58-88da-4b6e-8ad3-d47987faac19",
+				"method": "DELETE"
+			}
+		]
+	}
+}

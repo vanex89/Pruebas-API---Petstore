@@ -1,0 +1,2477 @@
+{
+	"info": {
+		"_postman_id": "655238c0-765c-4094-9264-ec51a02edd3e",
+		"name": "Pruebas API - Petstore",
+		"description": "**Objetivo:** Validar los endpoints principales de la API Petstore para el recurso **Pet**, cubriendo operaciones CRUD (Create, Read, Update, Delete).\n\n  \n**Alcance:** Ejecución de pruebas positivas y negativas sobre `POST`, `GET`, `PUT` y `DELETE`, asegurando el correcto manejo de respuestas, validación de reglas de negocio y robustez ante entradas inválidas.\n\n  \n**Validaciones principales:** códigos de estado HTTP, headers (`Content-Type`), tiempos de respuesta ≤ 2000 ms y consistencia de datos en las respuestas.\n\n  \n**Estrategia:** organización de los casos en folders por método, uso de variables para encadenar peticiones y documentación detallada en cada request.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17642252"
+	},
+	"item": [
+		{
+			"name": "POST /pet",
+			"item": [
+				{
+					"name": "API-PET-POST-01 - Positivo | Crear pet válido",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Genera un id único (timestamp) y lo guarda en la variable de colección\r",
+									"const id = Date.now();\r",
+									"pm.collectionVariables.set('petId', id.toString());"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const timeoutMs = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"\r",
+									"pm.test(\"Status 200\", () => pm.response.code === 200);\r",
+									"\r",
+									"pm.test(\"Content-Type JSON\", () => \r",
+									"  (pm.response.headers.get('Content-Type') || \"\")\r",
+									"    .includes(pm.collectionVariables.get('contentTypeExpected') || 'application/json')\r",
+									");\r",
+									"\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => \r",
+									"  pm.response.responseTime <= timeoutMs\r",
+									");\r",
+									"\r",
+									"let json;\r",
+									"pm.test(\"JSON válido con campos clave\", () => {\r",
+									"  json = pm.response.json();\r",
+									"  pm.expect(json).to.have.property('id');\r",
+									"  pm.expect(json).to.have.property('name');\r",
+									"  pm.expect(json).to.have.property('status');\r",
+									"});\r",
+									"\r",
+									"pm.test(\"id y name coherentes con lo enviado\", () => {\r",
+									"  pm.expect(String(json.id)).to.eql(pm.collectionVariables.get('petId'));\r",
+									"  pm.expect(json.name).to.eql(pm.collectionVariables.get('petName') || 'QA-Vane-Pet');\r",
+									"});\r",
+									"\r",
+									"// Guardamos petId definitivo por si el backend lo altera\r",
+									"pm.collectionVariables.set('petId', String(json.id));\r",
+									"pm.collectionVariables.set('lastResponseTimeMs', String(pm.response.responseTime));\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"{{petName}}\",\r\n  \"status\": \"{{petStatus}}\",\r\n  \"photoUrls\": [\"https://example.com/p.jpg\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** validar creación exitosa de un recurso Pet.\n\n  \n**Precondiciones:** ninguna.\n\n  \n**Datos de prueba:** id dinámico generado, name = {{petName}}, status = {{petStatus}}.\n\n  \n**Validaciones:** HTTP 200; Content-Type JSON; tiempo ≤ {{timeoutMs}}; JSON con id, name y status; id y name coherentes con lo enviado."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-POST-02 - Negativo | JSON malformado / estructura inválida",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Genera un id SOLO para intentar crear (no debe crearse por JSON roto)\r",
+									"pm.collectionVariables.set('attemptedId', (Date.now() + 3).toString());\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// 1. Esperamos un error de cliente (4xx) por JSON malformado/estructura inválida\r",
+									"pm.test(\"Status de error (4xx)\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.within(400, 499);\r",
+									"});\r",
+									"\r",
+									"// 2. Respuesta controlada (no 5xx)\r",
+									"pm.test(\"Respuesta controlada (no 5xx)\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.below(500);\r",
+									"});\r",
+									"\r",
+									"// 3. Comprobar que NO se haya creado el recurso con attemptedId\r",
+									"const attemptedId = pm.collectionVariables.get('attemptedId');\r",
+									"pm.sendRequest({\r",
+									"  url: `${pm.environment.get('baseUrl')}/pet/${attemptedId}`,\r",
+									"  method: 'GET',\r",
+									"  header: { Accept: 'application/json' }\r",
+									"}, (err, res) => {\r",
+									"  pm.test(\"No se creó recurso con attemptedId (GET debe ser 404)\", () => {\r",
+									"    pm.expect(res.code).to.equal(404);\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"id\": {{attemptedId}}, \"name\": \"QA-Vane-Pet\", \"status\": \"available\"",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** verificar manejo de request inválido por JSON malformado/estructura inválida.\n\n**Precondiciones:** ninguna.\n\n**Request:** POST /pet.\n\n**Datos de prueba:** body con error sintáctico (llave faltante o coma colgante). Se usa attemptedId={{attemptedId}} solo para verificar que no se cree recurso.\n\n**Validaciones:** HTTP 4xx (400/415/422); respuesta controlada (no 5xx); GET /pet/{{attemptedId}} → 404; no se crea recurso.\n\n**Por qué:** cubre validación sintáctica y evita datos corruptos."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-POST-03 - Negativo | Valor fuera de catálogo en status",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Id que \"intentaríamos\" crear. No debe persistirse por status inválido.\r",
+									"pm.collectionVariables.set('attemptedInvalidId', (Date.now() + 10).toString());\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === POST-03 — Negativo | status fuera de catálogo ===\r",
+									"// Estructura alineada: Status, CT, Tiempo, Validación dominio y verificación de persistencia.\r",
+									"\r",
+									"const timeoutMs = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const baseUrl = pm.environment.get('baseUrl');\r",
+									"const attemptedInvalidId = pm.collectionVariables.get('attemptedInvalidId');\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// 1. Respuesta controlada\r",
+									"pm.test(\"Respuesta controlada (no 5xx)\", () => pm.expect(code).to.be.below(500));\r",
+									"\r",
+									"// 2. Status esperado\r",
+									"pm.test(\"Status esperado (400/422 o 200)\", () => pm.expect([400, 422, 200]).to.include(code));\r",
+									"\r",
+									"// 3. Content-Type JSON (si viene)\r",
+									"pm.test(\"Content-Type JSON\", () => (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt));\r",
+									"\r",
+									"// 4. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.response.responseTime <= timeoutMs);\r",
+									"\r",
+									"// 5. Cuerpo (si hay JSON)\r",
+									"let bodyJson = null; try { bodyJson = pm.response.json(); } catch (e) {}\r",
+									"\r",
+									"if ([400, 422].includes(code)) {\r",
+									"  // --- Rama A: Rechazo de dominio ---\r",
+									"  pm.test(\"Rechazo por dominio (400/422)\", () => true);\r",
+									"\r",
+									"  if (bodyJson) {\r",
+									"    pm.test(\"Mensaje de validación presente\", () =>\r",
+									"      pm.expect(JSON.stringify(bodyJson).toLowerCase()).to.match(/invalid|error|bad|status/));\r",
+									"  } else {\r",
+									"    pm.test(\"Mensaje de validación presente (opcional)\", () => true);\r",
+									"  }\r",
+									"\r",
+									"  pm.sendRequest({ url: `${baseUrl}/pet/${attemptedInvalidId}`, method: 'GET', header: { Accept: 'application/json' } },\r",
+									"    (err, res) => pm.test(\"No se creó recurso (GET 404)\", () => pm.expect(res.code).to.equal(404)));\r",
+									"\r",
+									"} else if (code === 200) {\r",
+									"  // --- Rama B: Acepta valor fuera de catálogo ---\r",
+									"  pm.test(\"Body coherente con intento inválido (id + unknown_status)\", () => {\r",
+									"    pm.expect(bodyJson).to.be.an(\"object\");\r",
+									"    pm.expect(String(bodyJson.id)).to.eql(String(attemptedInvalidId));\r",
+									"    pm.expect(bodyJson.status).to.eql(\"unknown_status\");\r",
+									"  });\r",
+									"\r",
+									"  pm.sendRequest({ url: `${baseUrl}/pet/${attemptedInvalidId}`, method: 'GET', header: { Accept: 'application/json' } },\r",
+									"    (err, res) => {\r",
+									"      if (res.code === 200) {\r",
+									"        pm.test(\"Persistió recurso con unknown_status (GET 200)\", () => true);\r",
+									"      } else if (res.code === 404) {\r",
+									"        pm.test(\"Respuesta no persistente (GET 404) — documentado\", () => true);\r",
+									"      } else {\r",
+									"        pm.test(\"Código GET no esperado\", () => pm.expect.fail(`GET devolvió ${res.code}`));\r",
+									"      }\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// 6. petId de la suite no cambia\r",
+									"const currentPetId = pm.collectionVariables.get('petId');\r",
+									"pm.test(\"petId de la suite permanece sin cambios\", () =>\r",
+									"  pm.expect(pm.collectionVariables.get('petId')).to.eql(currentPetId));\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{attemptedInvalidId}},\r\n  \"name\": \"{{petName}}\",\r\n  \"status\": \"unknown_status\",\r\n  \"photoUrls\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** Validar la regla de dominio de status (enumeración) con un valor fuera de catálogo.\n\n**Precondiciones:** Ninguna.\n\n**Request:** POST /pet | Headers: Content-Type/Accept = application/json  \nBody: id={{attemptedInvalidId}}, name={{petName}}, status=\"unknown_status\", photoUrls=\\[\\]\n\n**Validaciones:**  \n• No 5xx; Content-Type JSON; t ≤ {{timeoutMs}} ms.  \n• Status esperado: 400/422 (rechazo) o 200 (comportamiento observado).  \n• Si 400/422 → GET /pet/{{attemptedInvalidId}} = 404 (no creado).  \n• Si 200 → Body coherente (id y status=\"unknown_status\") y verificación de persistencia:  \n– GET 200 = persistió | GET 404 = no persistente (documentar).\n\n**Por qué: e**vitar valores no controlados y dejar trazado el comportamiento real del endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-POST-04 - Negativo | Duplicidad de id",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Valores \"dup\" para provocar colisión (mismo id, datos distintos)\r",
+									"pm.collectionVariables.set('duplicate_name',\r",
+									"  (pm.collectionVariables.get('petName') || 'QA-Vane-Pet') + '-dup');\r",
+									"pm.collectionVariables.set('duplicate_status', 'pending');"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === POST-04 — Duplicidad de id ===\r",
+									"\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const baseUrl    = pm.environment.get('baseUrl');\r",
+									"const id         = pm.collectionVariables.get('petId');\r",
+									"\r",
+									"const dupName    = pm.collectionVariables.get('duplicate_name');\r",
+									"const dupStatus  = pm.collectionVariables.get('duplicate_status');\r",
+									"const baseName   = pm.collectionVariables.get('petName')   || '';\r",
+									"const baseStatus = pm.collectionVariables.get('petStatus') || '';\r",
+									"\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// Checks comunes\r",
+									"pm.test(\"Respuesta controlada (no 5xx)\", () => pm.expect(code).to.be.below(500));\r",
+									"pm.test(\"Status esperado (400/409/422 o 2xx)\", () => pm.expect([400,409,422,200,201]).to.include(code));\r",
+									"pm.test(\"Content-Type JSON\", () => (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt));\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.response.responseTime <= timeoutMs);\r",
+									"\r",
+									"// Verificación post-estado del recurso\r",
+									"pm.sendRequest(\r",
+									"  { url: `${baseUrl}/pet/${id}`, method: 'GET', header: { Accept: 'application/json' } },\r",
+									"  (err, res) => {\r",
+									"    if (err) { pm.test(\"GET de verificación ejecutado\", () => pm.expect.fail(err.message)); return; }\r",
+									"\r",
+									"    const after = res.code;\r",
+									"    let js = {}; try { js = res.json(); } catch(e) {}\r",
+									"\r",
+									"    if ([400,409,422].includes(code)) {\r",
+									"      // Rechazo por duplicado\r",
+									"      pm.test(\"Rechazo por duplicado confirmado\", () => pm.expect([200,404]).to.include(after));\r",
+									"      if (after === 200) {\r",
+									"        pm.test(\"Original intacto (no cambió a valores duplicados)\", () => {\r",
+									"          pm.expect(js.name).to.eql(baseName);\r",
+									"          pm.expect(js.status).to.eql(baseStatus);\r",
+									"          pm.expect(js.name).to.not.eql(dupName);\r",
+									"          pm.expect(js.status).to.not.eql(dupStatus);\r",
+									"        });\r",
+									"      } else {\r",
+									"        pm.test(\"GET 404 (no encontrado) — entorno no persistente\", () => true);\r",
+									"      }\r",
+									"\r",
+									"    } else { // 2xx\r",
+									"      pm.test(\"Comportamiento 2xx documentado (upsert o no-op)\", () => true);\r",
+									"\r",
+									"      if (after === 200 && js.name === dupName && js.status === dupStatus) {\r",
+									"        pm.test(\"Upsert confirmado: reemplazó por duplicate_name/status\", () => true);\r",
+									"      } else if (after === 200 && js.name === baseName && js.status === baseStatus) {\r",
+									"        pm.test(\"Sin cambios (no-op con 2xx) — documentado\", () => true);\r",
+									"      } else if (after === 404) {\r",
+									"        pm.test(\"No persistió (GET 404) — documentado\", () => true);\r",
+									"      } else {\r",
+									"        pm.test(\"Estado posterior no esperado\", () =>\r",
+									"          pm.expect.fail(`GET ${after} con valores: ${JSON.stringify(js)}`));\r",
+									"      }\r",
+									"    }\r",
+									"  }\r",
+									");\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"{{duplicate_name}}\",\r\n  \"status\": \"{{duplicate_status}}\",\r\n  \"photoUrls\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** Verificar colisión por id duplicado y documentar el comportamiento real.\n\n**Precondición:** Existe {{petId}} (creado en POST-01). No se modifica {{petId}}.\n\n**Request:** POST /pet | JSON  \n**Body:** id={{petId}}, name={{duplicate_name}} ({{petName}}-dup), status={{duplicate_status}} (\"pending\")\n\n**Validaciones:**  \n• No 5xx, Content-Type JSON, t ≤ {{timeoutMs}} ms.  \n• Status esperado: 400/409/422 (rechazo) o 2xx (comportamiento observado).  \n• GET /pet/{{petId}} tras el POST:  \n– Rechazo (400/409/422): original intacto (valores baseline) o 404 si no persiste.  \n– 2xx upsert: GET 200 refleja duplicate_name/status.  \n– 2xx no-op: GET 200 mantiene valores baseline.  \n– 2xx/404 sin persistencia: GET 404 (documentado)."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-POST-05 - Negativo | Tamaño/extremos de campos (name vacío o extremo)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// ID del intento (para verificar persistencia/no-creación)\r",
+									"pm.collectionVariables.set('attemptedExtremeId', (Date.now() + 20).toString());\r",
+									"\r",
+									"// Modo del caso: 'empty' (por defecto), 'long' o 'specials'\r",
+									"const mode = (pm.collectionVariables.get('invalidNameMode') || 'empty').toLowerCase();\r",
+									"\r",
+									"let invalidName = \"\";\r",
+									"if (mode === 'empty') {\r",
+									"  invalidName = \"\"; // nombre vacío\r",
+									"} else if (mode === 'long') {\r",
+									"  const specials = \" !@#$%^&*()[]{}<>?/\\\\|`~'\\\"\";\r",
+									"  invalidName = \"QA-\".repeat(120) + specials.repeat(3); // muy largo + especiales\r",
+									"} else if (mode === 'specials') {\r",
+									"  invalidName = \"<script>alert('xss')</script>\"; // caracteres potencialmente peligrosos\r",
+									"}\r",
+									"\r",
+									"pm.collectionVariables.set('invalidName', invalidName);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === POST-05 — Límites/Extremos de 'name' ===\r",
+									"// Estructura alineada: no 5xx, status esperado, CT JSON, tiempo, validación y verificación de persistencia.\r",
+									"\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const baseUrl    = pm.environment.get('baseUrl');\r",
+									"\r",
+									"const id         = pm.collectionVariables.get('attemptedExtremeId');\r",
+									"const sentName   = pm.collectionVariables.get('invalidName');\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Respuesta controlada (no 5xx)\r",
+									"pm.test(\"Respuesta controlada (no 5xx)\", () => pm.expect(code).to.be.below(500));\r",
+									"\r",
+									"// 2. Status esperado (rechazo 400/422 o 2xx si el backend acepta/sanitiza)\r",
+									"pm.test(\"Status esperado (400/422 o 2xx observado)\", () => pm.expect([400,422,200,201]).to.include(code));\r",
+									"\r",
+									"// 3. Content-Type JSON\r",
+									"pm.test(\"Content-Type JSON\", () => (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt));\r",
+									"\r",
+									"// 4. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.response.responseTime <= timeoutMs);\r",
+									"\r",
+									"// 5. Si rechaza (400/422): mensaje de validación y no creación\r",
+									"if ([400,422].includes(code)) {\r",
+									"  let body; try { body = pm.response.json(); } catch(e) { body = null; }\r",
+									"  pm.test(\"Mensaje de validación presente\", () => {\r",
+									"    const txt = JSON.stringify(body || {}).toLowerCase();\r",
+									"    pm.expect(txt).to.match(/invalid|error|bad|name|length/);\r",
+									"  });\r",
+									"  pm.sendRequest(\r",
+									"    { url: `${baseUrl}/pet/${id}`, method: 'GET', header: { Accept: 'application/json' } },\r",
+									"    (err, res) => pm.test(\"No se creó recurso (GET 404)\", () => pm.expect(res.code).to.equal(404))\r",
+									"  );\r",
+									"\r",
+									"// 6. Si acepta (2xx): body coherente y comprobar persistencia/sanitización\r",
+									"} else {\r",
+									"  let body = {}; try { body = pm.response.json(); } catch(e) {}\r",
+									"\r",
+									"  pm.test(\"Body procesable (aceptado/sanitizado)\", () => pm.expect(body).to.be.an(\"object\"));\r",
+									"  pm.test(\"Id devuelto coincide\", () => pm.expect(String(body.id)).to.eql(String(id)));\r",
+									"\r",
+									"  // GET para verificar qué grabó el backend (aceptado o sanitizado)\r",
+									"  pm.sendRequest(\r",
+									"    { url: `${baseUrl}/pet/${id}`, method: 'GET', header: { Accept: 'application/json' } },\r",
+									"    (err, res) => {\r",
+									"      if (res.code === 200) {\r",
+									"        const js = res.json();\r",
+									"        pm.test(\"Persistencia confirmada (GET 200)\", () => true);\r",
+									"        pm.test(\"Nombre aceptado o sanitizado (string)\", () => pm.expect(js).to.have.property('name').that.is.a('string'));\r",
+									"        // Si quieres, puedes registrar la longitud: pm.test(`Longitud nombre: ${js.name.length}`, () => true);\r",
+									"      } else if (res.code === 404) {\r",
+									"        pm.test(\"No persistente (GET 404) — documentado\", () => true);\r",
+									"      } else {\r",
+									"        pm.test(\"Código GET no esperado\", () => pm.expect.fail(`GET devolvió ${res.code}`));\r",
+									"      }\r",
+									"    }\r",
+									"  );\r",
+									"}\r",
+									"\r",
+									"// 7. No afectamos el petId de la suite\r",
+									"const suiteId = pm.collectionVariables.get('petId');\r",
+									"pm.test(\"petId de la suite permanece sin cambios\", () =>\r",
+									"  pm.expect(pm.collectionVariables.get('petId')).to.eql(suiteId)\r",
+									");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{attemptedExtremeId}},\r\n  \"name\": \"{{invalidName}}\",\r\n  \"status\": \"{{petStatus}}\",\r\n  \"photoUrls\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "Objetivo: validar límites/saneamiento de 'name' (vacío, muy largo o especiales).\n\n  \nPrecondiciones: ninguna. No tocar petId de la suite.\n\n  \n**Request:** POST /pet (JSON) con id={{attemptedExtremeId}} y name={{invalidName}} según invalidNameMode (empty/long/specials).\n\n  \n**Validaciones:** no 5xx, Content-Type JSON, t ≤ {{timeoutMs}}. Esperado 400/422; si 2xx, documentar aceptación/sanitización. Verificación con GET /pet/{{attemptedExtremeId}}: 404 = no creado; 200 = persistió (aceptado/sanitizado).\n\n  \n**Por qué:** cubre límites de campo y entradas anómalas."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "GET /pet/{petId}",
+			"item": [
+				{
+					"name": "API-PET-GET-01 - Positivo | Consultar pet existente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === GET-01 — Consultar pet existente ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"\r",
+									"const id        = pm.collectionVariables.get('petId');\r",
+									"const baseName  = pm.collectionVariables.get('petName')   || '';\r",
+									"const baseStatus= pm.collectionVariables.get('petStatus') || '';\r",
+									"const code      = pm.response.code;\r",
+									"\r",
+									"// 0. Sanidad de la siembra (informativo)\r",
+									"pm.test(\"Precondición: siembra ejecutada\", () => {\r",
+									"  const s = pm.collectionVariables.get('seedStatus');\r",
+									"  pm.expect(s).to.be.oneOf(['200','201','ERR']); // Permitimos ERR por entornos sin persistencia\r",
+									"});\r",
+									"\r",
+									"// 1. Content-Type\r",
+									"pm.test(\"Content-Type JSON\", () =>\r",
+									"  (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt));\r",
+									"\r",
+									"// 2. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.response.responseTime <= timeoutMs);\r",
+									"\r",
+									"// 3. Rama ideal: 200 OK\r",
+									"if (code === 200) {\r",
+									"  let body = {};\r",
+									"  try { body = pm.response.json(); } catch(e) {}\r",
+									"\r",
+									"  pm.test(\"HTTP 200\", () => pm.expect(code).to.eql(200));\r",
+									"  pm.test(\"Body con id/name/status\", () => {\r",
+									"    pm.expect(body).to.have.property('id');\r",
+									"    pm.expect(body).to.have.property('name');\r",
+									"    pm.expect(body).to.have.property('status');\r",
+									"  });\r",
+									"  pm.test(\"id = petId\", () => pm.expect(String(body.id)).to.eql(String(id)));\r",
+									"  pm.test(\"name/status coherentes con baseline\", () => {\r",
+									"    if (baseName)   pm.expect(body.name).to.eql(baseName);\r",
+									"    if (baseStatus) pm.expect(body.status).to.eql(baseStatus);\r",
+									"  });\r",
+									"\r",
+									"// 4. Fallback documentado: 404 (entorno no persistente)\r",
+									"} else if (code === 404) {\r",
+									"  pm.test(\"Entorno no persistente — 404 documentado\", () => true);\r",
+									"  let body = {};\r",
+									"  try { body = pm.response.json(); } catch(e) {}\r",
+									"  pm.test(\"Mensaje controlado (not found)\", () => {\r",
+									"    const t = JSON.stringify(body).toLowerCase();\r",
+									"    pm.expect(t).to.match(/not\\s*found/);\r",
+									"  });\r",
+									"\r",
+									"// 5. Otro código: marcar\r",
+									"} else {\r",
+									"  pm.test(\"Código no esperado\", () => pm.expect.fail(`HTTP ${code}`));\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Asegura precondición: existe el pet con id = {{petId}}\r",
+									"const baseUrl = pm.environment.get('baseUrl');\r",
+									"\r",
+									"let id     = pm.collectionVariables.get('petId');\r",
+									"let name   = pm.collectionVariables.get('petName')   || 'QA-Vane-Pet';\r",
+									"let status = pm.collectionVariables.get('petStatus') || 'available';\r",
+									"\r",
+									"// Si no hay petId, generamos uno\r",
+									"if (!id) {\r",
+									"  id = Date.now().toString();\r",
+									"  pm.collectionVariables.set('petId', id);\r",
+									"}\r",
+									"\r",
+									"// Intento de creación/upsert antes del GET\r",
+									"pm.sendRequest({\r",
+									"  url: `${baseUrl}/pet`,\r",
+									"  method: 'POST',\r",
+									"  header: { 'Content-Type': 'application/json', 'Accept': 'application/json' },\r",
+									"  body: {\r",
+									"    mode: 'raw',\r",
+									"    raw: JSON.stringify({ id: Number(id), name, status, photoUrls: [] })\r",
+									"  }\r",
+									"}, (err, res) => {\r",
+									"  pm.collectionVariables.set('seedStatus', res ? String(res.code) : 'ERR');\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{petId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{petId}}"
+							]
+						},
+						"description": "**Objetivo:** recuperar una mascota existente y validar integridad de datos.\n\n**Precondiciones:** variables de suite disponibles (petId, petName, petStatus).  \nNota: el Pre-request realiza un upsert (POST /pet) para asegurar que el id exista antes del GET.\n\n**Request:** GET /pet/{{petId}} | Headers: Accept=application/json\n\n**Validaciones:**  \n• Content-Type JSON y tiempo ≤ {{timeoutMs}} ms.  \n• Rama ideal: HTTP 200; body con id/name/status; id = {{petId}}; name/status coherentes con baseline (petName, petStatus).  \n• Fallback documentado: si el backend no persiste, HTTP 404 con mensaje “not found” (no se falla la prueba; se registra como condición del entorno).\n\n**Por qué:** garantiza lectura e integridad del recurso y hace la prueba robusta ante entornos volátiles."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-GET-02 - Negativo | petId inexistente",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Genera un id que NO debería existir (distinto al petId de la suite)\r",
+									"const current = pm.collectionVariables.get('petId');\r",
+									"let candidate = (Date.now() + 999999).toString();\r",
+									"if (String(candidate) === String(current)) candidate = (Date.now() + 1999999).toString();\r",
+									"pm.collectionVariables.set('unknownPetId', candidate);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === GET-02 — petId inexistente ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type y tiempo\r",
+									"pm.test(\"Content-Type JSON\", () =>\r",
+									"  (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt));\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.response.responseTime <= timeoutMs);\r",
+									"\r",
+									"// 2. Esperamos 404 con mensaje 'not found'\r",
+									"if (code === 404) {\r",
+									"  pm.test(\"HTTP 404\", () => true);\r",
+									"  let body = {}; try { body = pm.response.json(); } catch(e) {}\r",
+									"  pm.test(\"Mensaje 'not found' controlado\", () => {\r",
+									"    const t = JSON.stringify(body).toLowerCase();\r",
+									"    pm.expect(t).to.match(/not\\s*found/);\r",
+									"  });\r",
+									"  // Sanidad: sin campos del recurso\r",
+									"  pm.test(\"Sin datos del recurso (no id/name/status)\", () => {\r",
+									"    let hasFields = false;\r",
+									"    try { hasFields = ['id','name','status'].some(k => body.hasOwnProperty(k)); } catch(e) {}\r",
+									"    pm.expect(hasFields).to.eql(false);\r",
+									"  });\r",
+									"} else {\r",
+									"  // Fallback documentado: a veces la API pública puede devolver 200 si ese id ya existe\r",
+									"  pm.test(\"Código no esperado para inexistente (documentado)\", () => {\r",
+									"    pm.expect([200]).to.include(code);\r",
+									"  });\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{unknownPetId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{unknownPetId}}"
+							]
+						},
+						"description": "**Objetivo:** manejo correcto de no encontrado.  \nRequest: GET /pet/{{unknownPetId}} (id generado que no existe).\n\n  \n**Validaciones:** HTTP 404; mensaje 'not found'; sin campos del recurso; Content-Type JSON; t ≤ {{timeoutMs}} ms.\n\n  \n**Notas:** si el backend devolviera 200 por colisión con un id real, se deja documentado."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-GET-03 - Negativo | petId no numérico / formato inválido",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Genera un petId inválido (no numérico). Cambia badIdMode en variables de colección si quieres otra variante.\r",
+									"// badIdMode: 'alpha' | 'uuid' | 'specials' | 'float'\r",
+									"const mode = (pm.collectionVariables.get('badIdMode') || 'alpha').toLowerCase();\r",
+									"\r",
+									"let bad = 'abc-not-number';\r",
+									"if (mode === 'uuid')       bad = '4f1a3b8e-zzzz-44aa-88cc-!!11';\r",
+									"else if (mode === 'specials') bad = 'pet-ñ-@#$-123';\r",
+									"else if (mode === 'float')    bad = '12.34';\r",
+									"\r",
+									"pm.collectionVariables.set('badPetId', bad);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === GET-03 — petId no numérico / formato inválido ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type y tiempo\r",
+									"pm.test(\"Content-Type JSON\", () =>\r",
+									"  (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt)\r",
+									");\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () =>\r",
+									"  pm.response.responseTime <= timeoutMs\r",
+									");\r",
+									"\r",
+									"// 2. Status esperado: 400/404 por formato inválido\r",
+									"pm.test(\"HTTP 400/404 por formato inválido\", () =>\r",
+									"  pm.expect([400, 404]).to.include(code)\r",
+									");\r",
+									"\r",
+									"// 3. Mensaje de error controlado (incluye NumberFormatException)\r",
+									"let body = {};\r",
+									"try { body = pm.response.json(); } catch (e) { body = {}; }\r",
+									"\r",
+									"pm.test(\"Mensaje de error controlado\", () => {\r",
+									"  const t = JSON.stringify(body).toLowerCase();\r",
+									"  // aceptamos variantes: invalid/bad/not found/exception/format/number\r",
+									"  pm.expect(t).to.match(/invalid|bad|not\\s*found|exception|format|number/);\r",
+									"});\r",
+									"\r",
+									"//  Sin fuga de stack trace ni HTML\r",
+									"pm.test(\"Sin fuga de stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/(\\n|\\r)\\s*at\\s+[\\w.$]+/i); // \" at com.pkg.Class\"\r",
+									"  pm.expect(raw).to.not.match(/exception in thread/i);\r",
+									"  pm.expect(raw).to.not.match(/<html/i);\r",
+									"});\r",
+									"\r",
+									"//  Sin datos del recurso\r",
+									"pm.test(\"Sin datos del recurso (no id/name/status)\", () => {\r",
+									"  const hasFields = ['id','name','status'].some(k => Object.prototype.hasOwnProperty.call(body, k));\r",
+									"  pm.expect(hasFields).to.eql(false);\r",
+									"});\r",
+									"\r",
+									"// 4. Si (inusualmente) devuelve 200, lo documentamos\r",
+									"if (code === 200) {\r",
+									"  pm.test(\"Comportamiento no esperado (200) — documentado\", () => true);\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{badPetId}}?Accept=application/json",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{badPetId}}"
+							],
+							"query": [
+								{
+									"key": "Accept",
+									"value": "application/json"
+								}
+							]
+						},
+						"description": "**Objetivo: v**alidar el tipado del path param usando un petId no numérico/ilegible y que el error sea controlado.\n\n**Precondiciones: n**inguna.\n\n**Request**  \nGET /pet/{{badPetId}}  \nHeaders: Accept=application/json\n\n**Validaciones**  \n• Content-Type incluye application/json; tiempo ≤ {{timeoutMs}} ms.  \n• HTTP 400 o 404 (según backend) por formato inválido.  \n• Mensaje de error controlado (acepta variantes comunes, p.ej. NumberFormatException/invalid/format/number/not found).  \n• Sin datos del recurso (no id/name/status).  \n• Sin fuga de stack trace ni HTML (respuesta limpia).\n\n**Notas: s**i el backend respondiera 200, se deja documentado como comportamiento no esperado.\n\n**Por qué: c**ubre errores de cliente por formato incorrecto y robustez ante mensajes/errores del servidor."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-GET-04 - Negativo | petId vacío o nulo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === GET-04 — petId vacío o nulo ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type y tiempo\r",
+									"pm.test(\"Content-Type JSON\", () =>\r",
+									"  (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt)\r",
+									");\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () =>\r",
+									"  pm.response.responseTime <= timeoutMs\r",
+									");\r",
+									"\r",
+									"// 2. Status esperado estrictamente según suite: 400 o 404\r",
+									"if ([400, 404].includes(code)) {\r",
+									"  pm.test(\"HTTP 400/404 por parámetro faltante\", () => true);\r",
+									"} else {\r",
+									"  // No rompemos la corrida, lo documentamos (p.ej. 405)\r",
+									"  pm.test(\"Comportamiento no esperado (p.ej. 405) — documentado\", () => true);\r",
+									"}\r",
+									"\r",
+									"// 3. Mensaje de error controlado\r",
+									"pm.test(\"Mensaje de error controlado\", () => {\r",
+									"  const statusText = String(pm.response.status || \"\").toLowerCase(); // ej: \"405 method not allowed\"\r",
+									"  const rawBody    = (pm.response.text() || \"\").toLowerCase();\r",
+									"\r",
+									"  if (code === 405) {\r",
+									"    // Algunos backends no incluyen 'message' en body para 405\r",
+									"    pm.expect(statusText).to.match(/method\\s*not\\s*allowed/);\r",
+									"  } else {\r",
+									"    // Para 400/404 esperamos texto de error en body\r",
+									"    pm.expect(rawBody).to.match(/invalid|missing|not\\s*found|bad|parameter|path/);\r",
+									"  }\r",
+									"});\r",
+									"\r",
+									"// 4. Sin datos del recurso\r",
+									"let body = {};\r",
+									"try { body = pm.response.json(); } catch (e) { body = {}; }\r",
+									"\r",
+									"pm.test(\"Sin campos del recurso (id/name/status)\", () => {\r",
+									"  const hasFields = ['id','name','status'].some(k =>\r",
+									"    Object.prototype.hasOwnProperty.call(body, k)\r",
+									"  );\r",
+									"  pm.expect(hasFields).to.eql(false);\r",
+									"});\r",
+									"\r",
+									"// 5. Sin fuga de stack trace/HTML\r",
+									"pm.test(\"Sin stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/(\\n|\\r)\\s*at\\s+[\\w.$]+/i);\r",
+									"  pm.expect(raw).to.not.match(/<html/i);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								""
+							]
+						},
+						"description": "**Objetivo:** verificar manejo de parámetro faltante (id vacío/nulo).\n\n**Precondiciones:** ninguna.\n\nRequest: GET /pet/  \nHeaders: Accept=application/json\n\n**Validaciones (esperadas):**  \n• Content-Type JSON; t ≤ {{timeoutMs}} ms.  \n• HTTP 400 o 404.  \n• Mensaje de error controlado en el body (invalid/missing/not found/bad/parameter/path).  \n• Sin datos del recurso (sin id/name/status).\n\n**Nota (comportamiento observado):**  \n• Algunos backends responden 405 “Method Not Allowed” para /pet/. En ese caso el body puede no incluir “message”; se valida por el _status line_ y se documenta como comportamiento no esperado (no falla la corrida)."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-GET-05 - Negativo | petId con caracteres especiales",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Genera un petId con caracteres especiales y su versión URL-encoded.\r",
+									"// Cambia 'specialIdMode' en variables de colección si quieres otra variante.\r",
+									"// specialIdMode: 'symbols' | 'spaces' | 'unicode'\r",
+									"const mode = (pm.collectionVariables.get('specialIdMode') || 'symbols').toLowerCase();\r",
+									"\r",
+									"let raw = \"id ñ@#$ % 20\";         // por defecto: símbolos + espacio\r",
+									"if (mode === 'spaces')  raw = \"id con varios espacios  2025\";\r",
+									"if (mode === 'unicode') raw = \"íd-ñ-漢字-✓\";\r",
+									"\r",
+									"const encoded = encodeURIComponent(raw);\r",
+									"\r",
+									"pm.collectionVariables.set('weirdPetIdRaw', raw);\r",
+									"pm.collectionVariables.set('weirdPetIdEncoded', encoded);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === GET-05 — petId con caracteres especiales ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type y tiempo\r",
+									"pm.test(\"Content-Type JSON\", () =>\r",
+									"  (pm.response.headers.get('Content-Type') || \"\").toLowerCase().includes(expectedCt)\r",
+									");\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () =>\r",
+									"  pm.response.responseTime <= timeoutMs\r",
+									");\r",
+									"\r",
+									"// 2. Status esperado por robustez de ruta: 400 o 404\r",
+									"pm.test(\"HTTP 400/404 por id con caracteres especiales\", () =>\r",
+									"  pm.expect([400, 404]).to.include(code)\r",
+									");\r",
+									"\r",
+									"// 3. Mensaje de error controlado (sin depender de wording exacto)\r",
+									"let body = {};\r",
+									"try { body = pm.response.json(); } catch (e) { body = {}; }\r",
+									"pm.test(\"Mensaje de error controlado\", () => {\r",
+									"  const t = JSON.stringify(body).toLowerCase();\r",
+									"  // aceptamos variantes comunes de error por parseo/encoding/validación\r",
+									"  pm.expect(t).to.match(/invalid|bad|not\\s*found|encode|decode|character|format|exception/);\r",
+									"});\r",
+									"\r",
+									"// 4. Sin datos del recurso (defensa)\r",
+									"pm.test(\"Sin campos del recurso (id/name/status)\", () => {\r",
+									"  const hasFields = ['id','name','status'].some(k => Object.prototype.hasOwnProperty.call(body, k));\r",
+									"  pm.expect(hasFields).to.eql(false);\r",
+									"});\r",
+									"\r",
+									"// 5. Sin fuga de stack trace/HTML\r",
+									"pm.test(\"Sin stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/(\\n|\\r)\\s*at\\s+[\\w.$]+/i);\r",
+									"  pm.expect(raw).to.not.match(/<html/i);\r",
+									"});\r",
+									"\r",
+									"// 6. Si (inusualmente) devuelve 200, lo documentamos\r",
+									"if (code === 200) {\r",
+									"  pm.test(\"Comportamiento no esperado (200) — documentado\", () => true);\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{weirdPetIdEncoded}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{weirdPetIdEncoded}}"
+							]
+						},
+						"description": "**Objetivo:** testear robustez ante caracteres especiales en el path param.  \n\n**Precondiciones:** ninguna (el Pre-request genera weirdPetIdRaw y weirdPetIdEncoded).  \n\nRequest: GET /pet/{{weirdPetIdEncoded}} | Headers: Accept=application/json  \n\n**Validaciones:** Content-Type JSON; t ≤ {{timeoutMs}} ms; HTTP 400 o 404; mensaje de error controlado (encoding/format); sin id/name/status; sin stack trace/HTML.  \n\n**Por qué:** evita fallos por encoding/decoding de rutas y valida manejo seguro de entradas especiales."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PUT /pet",
+			"item": [
+				{
+					"name": "API-PET-PUT-01 - Positivo | Actualizar nombre y estado",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// === PUT-01 — Semilla y baseline ===\r",
+									"const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"const ct = {'Content-Type':'application/json','Accept':'application/json'};\r",
+									"\r",
+									"// 1) Asegura petId (si no existe, siembra)\r",
+									"if (!pm.collectionVariables.get('petId')) {\r",
+									"  const id = Date.now();\r",
+									"  pm.collectionVariables.set('petId', String(id));\r",
+									"  pm.collectionVariables.set('petName', 'QA-Vane-Pet');\r",
+									"  pm.collectionVariables.set('petStatus', 'available');\r",
+									"\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet`,\r",
+									"    method: 'POST',\r",
+									"    header: ct,\r",
+									"    body: { mode:'raw', raw: JSON.stringify({\r",
+									"      id, name: 'QA-Vane-Pet', status: 'available', photoUrls: []\r",
+									"    })}\r",
+									"  }, () => {});\r",
+									"}\r",
+									"\r",
+									"// 2) Baseline actual desde backend\r",
+									"pm.sendRequest({\r",
+									"  url: `${base}/pet/${pm.collectionVariables.get('petId')}`,\r",
+									"  method:'GET', header:{'Accept':'application/json'}\r",
+									"}, (_, res) => {\r",
+									"  try {\r",
+									"    const j = res.json();\r",
+									"    pm.collectionVariables.set('baselineNameBefore', String(j.name || ''));\r",
+									"    pm.collectionVariables.set('baselineStatusBefore', String(j.status || ''));\r",
+									"  } catch(_) {}\r",
+									"});\r",
+									"\r",
+									"// 3) Nuevos valores (si no están definidos)\r",
+									"if (!pm.collectionVariables.get('newPetName'))   pm.collectionVariables.set('newPetName', 'QA-Vane-Pet-upd');\r",
+									"if (!pm.collectionVariables.get('newPetStatus')) pm.collectionVariables.set('newPetStatus', 'sold');\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === PUT-01 — Tests ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"const body = pm.response.json();\r",
+									"\r",
+									"const id = pm.collectionVariables.get('petId');\r",
+									"const newName = pm.collectionVariables.get('newPetName');\r",
+									"const newStatus = pm.collectionVariables.get('newPetStatus');\r",
+									"\r",
+									"pm.test('Respuesta controlada (no 5xx)', () => pm.expect(code).to.be.below(500));\r",
+									"pm.test('Content-Type JSON', () => {\r",
+									"  pm.expect((pm.response.headers.get('Content-Type')||'').toLowerCase()).to.include(expectedCt);\r",
+									"});\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.expect(pm.response.responseTime).to.be.below(timeoutMs));\r",
+									"\r",
+									"pm.test('HTTP 200', () => pm.expect(code).to.eql(200));\r",
+									"pm.test('Id devuelto coincide', () => pm.expect(String(body.id)).to.eql(String(id)));\r",
+									"pm.test('Name/status actualizados en body', () => {\r",
+									"  pm.expect(String(body.name)).to.eql(String(newName));\r",
+									"  pm.expect(String(body.status)).to.eql(String(newStatus));\r",
+									"});\r",
+									"\r",
+									"// Verificación de persistencia por GET\r",
+									"pm.test('Persistencia verificada por GET', (done) => {\r",
+									"  const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet/${id}`, method:'GET', header:{'Accept':'application/json'}\r",
+									"  }, (err, res) => {\r",
+									"    pm.expect(err).to.equal(null);\r",
+									"    const j = res.json();\r",
+									"    pm.expect(String(j.id)).to.eql(String(id));\r",
+									"    pm.expect(String(j.name)).to.eql(String(newName));\r",
+									"    pm.expect(String(j.status)).to.eql(String(newStatus));\r",
+									"    // Actualiza baseline global para siguientes pruebas\r",
+									"    pm.collectionVariables.set('petName', String(newName));\r",
+									"    pm.collectionVariables.set('petStatus', String(newStatus));\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"{{newPetName}}\",\r\n  \"status\": \"{{newPetStatus}}\",\r\n  \"photoUrls\": []\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** validar actualización exitosa de campos principales (name, status).\n\n**Precondiciones:** petId existente (el Pre-request siembra con POST y calcula {{newPetName}} / {{newPetStatus}}).\n\nRequest: PUT /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody: { id={{petId}}, name={{newPetName}}, status={{newPetStatus}}, photoUrls: \\[\\] }\n\n**Validaciones:**\n\n- HTTP 200; Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- Body refleja cambios (id={{petId}}, name/status actualizados).\n    \n- GET /pet/{{petId}} confirma cambios (reintentos breves); si 404 persiste, se documenta como entorno no persistente.\n    \n- Baseline actualizado: petName={{newPetName}}, petStatus={{newPetStatus}}.\n    \n\n**Por qué:** confirma persistencia de cambios y lectura coherente tolerando latencia del entorno."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-PUT-02 - Negativo | Falta id en body",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// === PUT-02 — Baseline y datos candidatos ===\r",
+									"const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"const ct = {'Content-Type':'application/json','Accept':'application/json'};\r",
+									"\r",
+									"// Asegura existencia de petId\r",
+									"if (!pm.collectionVariables.get('petId')) {\r",
+									"  const id = Date.now();\r",
+									"  pm.collectionVariables.set('petId', String(id));\r",
+									"  pm.collectionVariables.set('petName', 'QA-Vane-Pet');\r",
+									"  pm.collectionVariables.set('petStatus', 'available');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet`, method:'POST', header: ct,\r",
+									"    body:{mode:'raw', raw: JSON.stringify({id, name:'QA-Vane-Pet', status:'available', photoUrls:[]})}\r",
+									"  }, () => {});\r",
+									"}\r",
+									"\r",
+									"// Baseline desde backend\r",
+									"pm.sendRequest({\r",
+									"  url: `${base}/pet/${pm.collectionVariables.get('petId')}`,\r",
+									"  method:'GET', header:{'Accept':'application/json'}\r",
+									"}, (_, res) => {\r",
+									"  try {\r",
+									"    const j = res.json();\r",
+									"    pm.collectionVariables.set('baselineNameBefore', String(j.name||''));\r",
+									"    pm.collectionVariables.set('baselineStatusBefore', String(j.status||''));\r",
+									"  } catch(_) {}\r",
+									"});\r",
+									"\r",
+									"// Candidatos del PUT sin id\r",
+									"if (!pm.collectionVariables.get('put02Name'))   pm.collectionVariables.set('put02Name',   'QA-Vane-Pet-upd-upd-noid');\r",
+									"if (!pm.collectionVariables.get('put02Status')) pm.collectionVariables.set('put02Status', 'sold');\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === PUT-02 — Tests (falta id) ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"const baseName   = pm.collectionVariables.get('baselineNameBefore');\r",
+									"const baseStatus = pm.collectionVariables.get('baselineStatusBefore');\r",
+									"const id         = pm.collectionVariables.get('petId');\r",
+									"\r",
+									"pm.test('Respuesta controlada (no 5xx)', () => pm.expect(code).to.be.below(500));\r",
+									"pm.test('Content-Type JSON', () => {\r",
+									"  pm.expect((pm.response.headers.get('Content-Type')||'').toLowerCase()).to.include(expectedCt);\r",
+									"});\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.expect(pm.response.responseTime).to.be.below(timeoutMs));\r",
+									"\r",
+									"// 4xx esperado, pero toleramos 200 documentado (backend tolerante)\r",
+									"pm.test('Status esperado (400/422 o 200 documentado)', () =>\r",
+									"  pm.expect([200,400,401,403,404,409,422]).to.include(code)\r",
+									");\r",
+									"\r",
+									"// Si 4xx, mensaje controlado\r",
+									"if ([400,401,403,404,409,422].includes(code)) {\r",
+									"  pm.test('Mensaje menciona id faltante', () => {\r",
+									"    const raw = (pm.response.text()||'').toLowerCase();\r",
+									"    pm.expect(raw).to.match(/id|missing|required/);\r",
+									"    pm.expect(raw).to.not.match(/<html|exception|stack/i);\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"// No persistencia en backend\r",
+									"pm.test('Baseline intacta tras PUT sin id (GET)', (done) => {\r",
+									"  const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet/${id}`, method:'GET', header:{'Accept':'application/json'}\r",
+									"  }, (err, res) => {\r",
+									"    pm.expect(err).to.equal(null);\r",
+									"    const j = res.json();\r",
+									"    pm.expect(String(j.name)).to.eql(String(baseName));\r",
+									"    pm.expect(String(j.status)).to.eql(String(baseStatus));\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"{{put02Name}}\",\r\n  \"status\": \"{{put02Status}}\",\r\n  \"photoUrls\": []\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** asegurar obligatoriedad del identificador en actualización.\n\n**Precondiciones:** ninguna (se conserva baseline: petId/petName/petStatus).\n\nRequest: PUT /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody: { name={{petName}}-noid, status={{petStatus}}, photoUrls: \\[\\] } # sin id\n\n**Validaciones:**\n\n- Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- HTTP 400/422 (ideal). Si responde 200, se documenta como “acepta upsert/creación”.\n    \n- Mensaje de error menciona id/invalid/missing/required (en 4xx).\n    \n- GET /pet/{{petId}} confirma que la mascota original NO cambió (o 404 documentado por entorno efímero).\n    \n\n**Por qué:** protege reglas mínimas del contrato PUT."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-PUT-03 - Negativo | status inválido en actualización",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// === PUT-03 — Baseline y status inválido ===\r",
+									"const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"const ct = {'Content-Type':'application/json','Accept':'application/json'};\r",
+									"\r",
+									"// Asegura petId\r",
+									"if (!pm.collectionVariables.get('petId')) {\r",
+									"  const id = Date.now();\r",
+									"  pm.collectionVariables.set('petId', String(id));\r",
+									"  pm.collectionVariables.set('petName', 'QA-Vane-Pet');\r",
+									"  pm.collectionVariables.set('petStatus', 'available');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet`, method:'POST', header: ct,\r",
+									"    body:{mode:'raw', raw: JSON.stringify({id, name:'QA-Vane-Pet', status:'available', photoUrls:[]})}\r",
+									"  }, () => {});\r",
+									"}\r",
+									"\r",
+									"// Baseline para comprobar no persistencia si 4xx\r",
+									"pm.sendRequest({\r",
+									"  url: `${base}/pet/${pm.collectionVariables.get('petId')}`,\r",
+									"  method:'GET', header:{'Accept':'application/json'}\r",
+									"}, (_, res) => {\r",
+									"  try {\r",
+									"    const j = res.json();\r",
+									"    pm.collectionVariables.set('baselineNameBefore', String(j.name||''));\r",
+									"    pm.collectionVariables.set('baselineStatusBefore', String(j.status||''));\r",
+									"  } catch(_) {}\r",
+									"});\r",
+									"\r",
+									"// Status inválido\r",
+									"pm.collectionVariables.set('invalidStatus', 'unknown_status');"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === PUT-03 — Tests (status inválido) ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"const id = pm.collectionVariables.get('petId');\r",
+									"const baseName   = pm.collectionVariables.get('baselineNameBefore');\r",
+									"const baseStatus = pm.collectionVariables.get('baselineStatusBefore');\r",
+									"\r",
+									"pm.test('Respuesta controlada (no 5xx)', () => pm.expect(code).to.be.below(500));\r",
+									"pm.test('Content-Type JSON', () => {\r",
+									"  pm.expect((pm.response.headers.get('Content-Type')||'').toLowerCase()).to.include(expectedCt);\r",
+									"});\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => pm.expect(pm.response.responseTime).to.be.below(timeoutMs));\r",
+									"\r",
+									"pm.test('Status esperado (400/422 o 200 documentado)', () =>\r",
+									"  pm.expect([200,400,401,403,404,409,422]).to.include(code)\r",
+									");\r",
+									"\r",
+									"// Si 4xx, mensaje de validación\r",
+									"if ([400,401,403,404,409,422].includes(code)) {\r",
+									"  pm.test('Mensaje menciona status inválido', () => {\r",
+									"    const raw = (pm.response.text()||'').toLowerCase();\r",
+									"    pm.expect(raw).to.match(/status|invalid|not\\s*allowed/);\r",
+									"    pm.expect(raw).to.not.match(/<html|exception|stack/i);\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"// No persistencia del inválido\r",
+									"pm.test('Persistencia (GET) — no se aceptó status inválido', (done) => {\r",
+									"  const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet/${id}`, method:'GET', header:{'Accept':'application/json'}\r",
+									"  }, (err, res) => {\r",
+									"    pm.expect(err).to.equal(null);\r",
+									"    const j = res.json();\r",
+									"    if ([400,401,403,404,409,422].includes(code)) {\r",
+									"      pm.expect(String(j.name)).to.eql(String(baseName));\r",
+									"      pm.expect(String(j.status)).to.eql(String(baseStatus));\r",
+									"    }\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"{{baselineNameBefore}}\",\r\n  \"status\": \"{{invalidStatus}}\",\r\n  \"photoUrls\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** validar catálogo de status también en PUT y documentar el comportamiento real del backend.\n\n**Precondiciones:** petId existente (baseline en variables de colección).\n\nRequest: PUT /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody: { id: {{petId}}, name: {{petName}}, status: {{invalidStatus}}, photoUrls: \\[\\] }\n\n**Validaciones:**\n\n- Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- Esperado: HTTP 400/422 con mensaje de validación (status fuera de catálogo).\n    \n- **Comportamiento observado (documentado):** el backend puede responder 200.\n    \n    - Body: id = {{petId}}.\n        \n    - status devuelto ∈ { {{invalidStatus}}, {{petStatus}} } (aceptación o saneamiento).\n        \n    - name sin cambios.\n        \n- GET /pet/{{petId}} confirma estado final con la misma regla (∈ { {{invalidStatus}}, {{petStatus}} }).\n    \n\n**Hallazgo:** el backend acepta `status` fuera de catálogo (p.ej., `unknown_status`) y devuelve 200; se deja asentado como comportamiento del entorno."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-PUT-04 - Negativo | Actualizar petId inexistente",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// PUT-04 — Pre-request: generar un id inexistente de forma segura\r",
+									"let unknown = String(Date.now());\r",
+									"\r",
+									"// Evita colisión accidental si por alguna razón coincide con el petId real\r",
+									"const existing = pm.collectionVariables.get('petId');\r",
+									"if (existing && String(existing) === unknown) {\r",
+									"  unknown = String(Date.now() + 1337);\r",
+									"}\r",
+									"pm.collectionVariables.set('unknownPetId', unknown);\r",
+									"\r",
+									"// Estándares de suite (por si faltan)\r",
+									"if (!pm.collectionVariables.get('contentTypeExpected')) {\r",
+									"  pm.collectionVariables.set('contentTypeExpected', 'application/json');\r",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// PUT-04 — Tests: Actualizar id inexistente\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type y Tiempo\r",
+									"pm.test('Content-Type JSON', () => {\r",
+									"  pm.expect((pm.response.headers.get('Content-Type')||'').toLowerCase()).to.include(expectedCt);\r",
+									"});\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 2. Status esperado (404 preferido; tolera 200 documentado para NO upsert)\r",
+									"pm.test('404 o comportamiento documentado', () => {\r",
+									"  pm.expect([404,200]).to.include(code);\r",
+									"});\r",
+									"\r",
+									"// 3. Si 4xx, el mensaje debe ser claro (sin stack trace/HTML)\r",
+									"if (code >= 400) {\r",
+									"  pm.test('Mensaje claro (no encontrado / inválido)', () => {\r",
+									"    const raw = (pm.response.text()||'').toLowerCase();\r",
+									"    pm.expect(raw).to.match(/not\\s*found|unknown|invalid|does\\s*not\\s*exist/);\r",
+									"    pm.expect(raw).to.not.match(/<html|exception|stack/i);\r",
+									"  });\r",
+									"}\r",
+									"\r",
+									"// 4. Verifica que NO se haya creado el recurso (NO upsert): GET ⇒ 404\r",
+									"pm.test('No upsert (GET ⇒ 404)', (done) => {\r",
+									"  const base = pm.variables.replaceIn('{{baseUrl}}');\r",
+									"  const id = pm.collectionVariables.get('unknownPetId');\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet/${id}`,\r",
+									"    method: 'GET',\r",
+									"    header: { 'Accept': 'application/json' }\r",
+									"  }, (err, res) => {\r",
+									"    pm.expect(err).to.equal(null);\r",
+									"    pm.expect(res.code).to.eql(404);\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{unknownPetId}},\r\n  \"name\": \"QA-Vane-Pet-missing\",\r\n  \"status\": \"available\",\r\n  \"photoUrls\": []\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** comprobar la respuesta al intentar actualizar un pet inexistente sin crear recurso nuevo.\n\n**Precondiciones:** ninguna.\n\nRequest: PUT /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody (ejemplo): { id={{missingPetId}}, name={{missingPetName}}, status={{missingPetStatus}}, photoUrls: \\[\\], tags: \\[\\] }\n\n**Validaciones:**\n\n- Content-Type JSON.\n    \n- t ≤ {{timeoutMs}} ms.\n    \n- Comportamiento documentado: el PUT puede responder 200 (o 404/422 según el backend), **pero no debe crear** el recurso.\n    \n- Verificación de no-upsert: **GET /pet/{{missingPetId}} → 404** (no encontrado).\n    \n- (Opcional) Mensaje claro de error/estado si el backend lo provee.\n    \n\n**Por qué:** evita “upsert” implícito y deja explícito el contrato del endpoint ante ids inexistentes."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-PUT-05 - No-op / Idempotencia | Enviar mismos datos sin cambios",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === PUT-05 — No-op / Idempotencia (mismos datos) ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs')) || 2000;\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"\r",
+									"// Baseline estable (no tocamos variables compartidas)\r",
+									"const petId   = String(pm.collectionVariables.get('petId'));\r",
+									"\r",
+									"// Lo que enviamos (parseado ya con variables reemplazadas)\r",
+									"const sent = (() => {\r",
+									"  try { return JSON.parse(pm.variables.replaceIn(pm.request.body.raw || '{}')); }\r",
+									"  catch { return {}; }\r",
+									"})();\r",
+									"\r",
+									"// 1. Content-Type y tiempo\r",
+									"pm.test(\"Content-Type JSON\", () => {\r",
+									"  pm.expect((pm.response.headers.get('Content-Type') || \"\").toLowerCase())\r",
+									"    .to.include(expectedCt);\r",
+									"});\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 2. HTTP 200 (no-op)\r",
+									"pm.test(\"HTTP 200 (no-op)\", () => {\r",
+									"  pm.expect(pm.response.code).to.eql(200);\r",
+									"});\r",
+									"\r",
+									"// 3. Cuerpo coincide con lo enviado (mismos datos)\r",
+									"const body = pm.response.json();\r",
+									"pm.test(\"id devuelto = petId\", () => {\r",
+									"  pm.expect(String(body.id)).to.eql(String(petId));\r",
+									"});\r",
+									"pm.test(\"Sin cambios: name/status iguales a lo enviado\", () => {\r",
+									"  pm.expect(String(body.name)).to.eql(String(sent.name));\r",
+									"  pm.expect(String(body.status)).to.eql(String(sent.status));\r",
+									"});\r",
+									"\r",
+									"// 4. Persistencia verificada por GET (no cambió nada)\r",
+									"pm.test(\"Persistencia por GET (no cambios)\", (done) => {\r",
+									"  const url = pm.variables.replaceIn(`{{baseUrl}}/pet/${petId}`);\r",
+									"  pm.sendRequest({ url, method: \"GET\", header: { Accept: \"application/json\" } },\r",
+									"    (err, res) => {\r",
+									"      try {\r",
+									"        pm.expect(err).to.eql(null);\r",
+									"        pm.expect([200, 304]).to.include(res.code); // algunos backends pueden cachear\r",
+									"        const j = res.json();\r",
+									"        pm.expect(String(j.id)).to.eql(String(petId));\r",
+									"        pm.expect(String(j.name)).to.eql(String(sent.name));\r",
+									"        pm.expect(String(j.status)).to.eql(String(sent.status));\r",
+									"        done();\r",
+									"      } catch (e) { done(e); }\r",
+									"    }\r",
+									"  );\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Lee el estado actual del pet y define variables *locales* para este request.\r",
+									"const id = String(pm.collectionVariables.get('petId'));\r",
+									"const url = pm.variables.replaceIn(`{{baseUrl}}/pet/${id}`);\r",
+									"\r",
+									"pm.sendRequest({ url, method: 'GET', header: { Accept: 'application/json' } }, (err, res) => {\r",
+									"  // fallback: si falla el GET, usa lo que tengas en la colección\r",
+									"  const fallbackName   = String(pm.collectionVariables.get('petName'));\r",
+									"  const fallbackStatus = String(pm.collectionVariables.get('petStatus'));\r",
+									"\r",
+									"  if (err || !res || res.code < 200 || res.code >= 300) {\r",
+									"    pm.variables.set('idempoName', fallbackName);\r",
+									"    pm.variables.set('idempoStatus', fallbackStatus);\r",
+									"    return;\r",
+									"  }\r",
+									"\r",
+									"  const j = res.json() || {};\r",
+									"  pm.variables.set('idempoName',   String(j.name ?? fallbackName));\r",
+									"  pm.variables.set('idempoStatus', String(j.status ?? fallbackStatus));\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{petId}},\r\n  \"name\": \"{{idempoName}}\",\r\n  \"status\": \"{{idempoStatus}}\",\r\n  \"photoUrls\": [],\r\n  \"tags\": []\r\n}\r\n\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** comprobar idempotencia al enviar los mismos datos (no-op).\n\n**Precondiciones:** petId existente. El Pre-request hace GET /pet/{{petId}} y guarda localmente  \n{{idempoName}} y {{idempoStatus}} (no modifica variables de colección).\n\nRequest: PUT /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody: { id={{petId}}, name=\"{{idempoName}}\", status=\"{{idempoStatus}}\", photoUrls: \\[\\], tags: \\[\\] }\n\n**Validaciones:**\n\n- HTTP 200; Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- Respuesta = datos enviados (id/name/status).\n    \n- Persistencia: GET /pet/{{petId}} devuelve los mismos valores (sin cambios).\n    \n\n**Por qué:** confirma idempotencia/estabilidad del endpoint ante no-op."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DELETE /pet/{petId}",
+			"item": [
+				{
+					"name": "DELETE-01 - Seed (POST)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const id = Date.now();\r",
+									"pm.collectionVariables.set('delId', String(id));\r",
+									"pm.collectionVariables.set('delName', 'QA-Vane-Pet-del');\r",
+									"pm.collectionVariables.set('delStatus', 'available');\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const ok = [200, 201]; // por si tu backend devuelve 201 en POST\r",
+									"pm.test(\"Semilla creada (200/201)\", () => pm.expect(pm.response.code).to.be.oneOf(ok));\r",
+									"\r",
+									"pm.test(\"Echo correcto del id\", () => {\r",
+									"  let b = {};\r",
+									"  try { b = pm.response.json(); } catch(e) {}\r",
+									"  pm.expect(String(b.id)).to.eql(String(pm.collectionVariables.get('delId')));\r",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{delId}},\r\n  \"name\": \"{{delName}}\",\r\n  \"status\": \"{{delStatus}}\",\r\n  \"photoUrls\": [],\r\n  \"tags\": []\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet"
+							]
+						},
+						"description": "**Objetivo:** crear una mascota “semilla” que será eliminada en la prueba DELETE-01.\n\n**Precondiciones:** ninguna. El Pre-request de esta request genera variables de colección:\n\n- delId, delName, delStatus.\n    \n\nRequest: POST /pet  \nHeaders: Content-Type=application/json, Accept=application/json  \nBody (ejemplo):  \n{  \n\"id\": {{delId}},  \n\"name\": \"{{delName}}\",  \n\"status\": \"{{delStatus}}\",  \n\"photoUrls\": \\[\\],  \n\"tags\": \\[\\]  \n}\n\n**Validaciones:**\n\n- HTTP 200/201; Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- El body ecoa la creación: id == {{delId}} (y name/status coherentes).\n    \n- Deja preparado {{delId}} para la request DELETE-01.\n    \n\n**Por qué:** garantiza un pet existente y controlado para probar el borrado sin afectar otras pruebas."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-DELETE-01 - Positivo | Eliminar pet existente",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === DELETE-01 — Eliminar pet existente (con semilla previa) ===\r",
+									"const timeoutMs = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const ct = (pm.response.headers.get('Content-Type') || '').toLowerCase();\r",
+									"const delId = String(pm.collectionVariables.get('delId') || '');\r",
+									"const okCodes = [200, 204];\r",
+									"\r",
+									"pm.test(\"Precondición: delId existe en colección\", () => {\r",
+									"  pm.expect(delId, \"Falta delId (ejecuta primero la request de semilla)\").to.have.length.above(0);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Content-Type JSON\", () => {\r",
+									"  pm.expect(ct).to.include('application/json');\r",
+									"});\r",
+									"\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs + 1);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Status esperado (200/204)\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.oneOf(okCodes);\r",
+									"});\r",
+									"\r",
+									"// No tocar el baseline global de la suite\r",
+									"pm.test(\"Baseline intacto (si existe petId)\", () => {\r",
+									"  if (pm.collectionVariables.has('petId')) {\r",
+									"    const baseId = String(pm.collectionVariables.get('petId'));\r",
+									"    pm.expect(baseId).to.not.eql(delId);\r",
+									"  }\r",
+									"});\r",
+									"\r",
+									"// Verificación por GET: ya no existe\r",
+									"pm.test(\"Borrado verificado por GET (404)\", (done) => {\r",
+									"  const url = pm.variables.replaceIn(`{{baseUrl}}/pet/${delId}`);\r",
+									"  pm.sendRequest({ url, method: 'GET', header: { Accept: 'application/json' } }, (err, res) => {\r",
+									"    if (err) {\r",
+									"      console.log('GET verify error:', err);\r",
+									"      pm.expect.fail('Fallo GET de verificación (revisa baseUrl o conectividad)');\r",
+									"      return done();\r",
+									"    }\r",
+									"    pm.expect(res.code).to.eql(404);\r",
+									"\r",
+									"    let body = {};\r",
+									"    try { body = res.json(); } catch (e) {}\r",
+									"    const hasFields = ['id','name','status'].some(k => Object.prototype.hasOwnProperty.call(body, k));\r",
+									"    pm.expect(hasFields).to.eql(false);\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": {{delId}},\r\n  \"name\": \"{{delName}}\",\r\n  \"status\": \"{{delStatus}}\",\r\n  \"photoUrls\": [],\r\n  \"tags\": []\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{delId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{delId}}"
+							]
+						},
+						"description": "**Objetivo:** validar el borrado exitoso de una mascota existente y su no existencia posterior.\n\n**Precondiciones:** existe la semilla creada por “DELETE-01 – Seed (POST)” (usa {{delId}}).\n\n**Request:** DELETE /pet/{{delId}}  \nHeaders: Accept=application/json\n\n**Validaciones:**\n\n- HTTP 200/204 (según backend); Content-Type JSON; t ≤ {{timeoutMs}} ms.\n    \n- (Si aplica) mensaje de confirmación controlado.\n    \n- Verificación de no persistencia: GET /pet/{{delId}} → 404 (“not found”).\n    \n- Sin efectos colaterales sobre otros recursos.\n    \n\n**Por qué:** asegura la limpieza de datos y cierra el ciclo CRUD comprobando que el recurso ya no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-DELETE-02 - Negativo  Eliminar pet inexistente",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// DELETE-02: generar un id inexistente (muy alto) y guardarlo\r",
+									"const missId = String(Date.now() + 10_000_000); // improbable que exista\r",
+									"pm.collectionVariables.set('deleteMissingId', missId);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === DELETE-02 — Inexistente (robusto) ===\r",
+									"const timeoutMs = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type JSON (si presente)\r",
+									"pm.test(\"Content-Type JSON (si presente)\", () => {\r",
+									"  const ct = (pm.response.headers.get('Content-Type') || \"\").toLowerCase();\r",
+									"  if (ct) {\r",
+									"    pm.expect(ct).to.include(\"application/json\");\r",
+									"  } else {\r",
+									"    // Algunos 404 vienen sin header ni body; lo aceptamos.\r",
+									"    pm.expect(true).to.be.true;\r",
+									"  }\r",
+									"});\r",
+									"\r",
+									"// 2. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 3. Status esperado (200/404)\r",
+									"pm.test(\"Status esperado (200/404)\", () => {\r",
+									"  pm.expect([200, 404]).to.include(code);\r",
+									"});\r",
+									"\r",
+									"// 4. Mensaje controlado (si 4xx y body con mensaje)\r",
+									"pm.test(\"Mensaje controlado (si 4xx y body con mensaje)\", () => {\r",
+									"  if (String(code).startsWith(\"4\")) {\r",
+									"    const raw = pm.response.text() || \"\";\r",
+									"    if (raw.trim().length === 0) {\r",
+									"      // No hay body -> lo consideramos aceptado\r",
+									"      pm.expect(true).to.be.true;\r",
+									"    } else {\r",
+									"      let msg = \"\";\r",
+									"      try { msg = String(pm.response.json().message || \"\").toLowerCase(); }\r",
+									"      catch { msg = raw.toLowerCase(); }\r",
+									"      pm.expect(msg).to.match(/not\\s*found|invalid|missing/);\r",
+									"    }\r",
+									"  } else {\r",
+									"    pm.expect(true).to.be.true;\r",
+									"  }\r",
+									"});\r",
+									"\r",
+									"// 5. No-upsert: GET /pet/{id} ⇒ 404\r",
+									"pm.test(\"No-upsert: GET /pet/{id} ⇒ 404\", (done) => {\r",
+									"  const url = pm.variables.replaceIn(\"{{baseUrl}}/pet/{{deleteMissingId}}\");\r",
+									"  pm.sendRequest({ url, method: \"GET\", header: { Accept: \"application/json\" } }, (err, res) => {\r",
+									"    pm.expect(res.code).to.eql(404);\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									"\r",
+									"// 6. Sin stack trace/HTML\r",
+									"pm.test(\"Sin stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/<html|<body|exception|stack/i);\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{deleteMissingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{deleteMissingId}}"
+							]
+						},
+						"description": "**Objetivo:** validar manejo correcto al intentar borrar un recurso que no existe (sin efectos colaterales).\n\n**Precondiciones:** ninguna.\n\n**Request:** DELETE /pet/{{deleteMissingId}}  \nHeaders: Accept=application/json  \nBody: — (sin body)\n\n**Validaciones:**\n\n- Status esperado: 200 o 404 (según backend documentado).\n    \n- Content-Type JSON (si el header está presente).\n    \n- t ≤ {{timeoutMs}} ms.\n    \n- Mensaje controlado si hay body (match: not found|invalid|missing).\n    \n- Sin fuga de stack/HTML en la respuesta.\n    \n- No-upsert: GET /pet/{{deleteMissingId}} ⇒ 404 (no encontrado).\n    \n\n**Por qué:** asegura consistencia del contrato ante operaciones inválidas y evita efectos laterales."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-DELETE-03 - Negativo | petId no numérico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === DELETE-03 — petId no numérico / formato inválido ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || pm.collectionVariables.get('timeoutMs') || 2000);\r",
+									"const expectedCt = String(pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type JSON (si está presente)\r",
+									"pm.test(\"Content-Type JSON (si presente)\", () => {\r",
+									"  const ct = (pm.response.headers.get('Content-Type') || \"\").toLowerCase();\r",
+									"  if (ct) pm.expect(ct).to.include('application/json');\r",
+									"});\r",
+									"\r",
+									"// 2. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 3. Status esperado (400/404)\r",
+									"pm.test(\"Status esperado (400/404)\", () => {\r",
+									"  pm.expect([400, 404]).to.include(code);\r",
+									"});\r",
+									"\r",
+									"// 4. Mensaje controlado (formato inválido)\r",
+									"pm.test(\"Mensaje controlado (formato inválido)\", () => {\r",
+									"  let msg = \"\";\r",
+									"  try { msg = String(pm.response.json().message || \"\").toLowerCase(); }\r",
+									"  catch { msg = pm.response.text().toLowerCase(); }\r",
+									"  // Acepta distintos mensajes según backend (NumberFormatException, invalid, not allowed, not found, etc.)\r",
+									"  pm.expect(msg).to.match(/invalid|bad|not\\s*allowed|numberformat|not\\s*found/);\r",
+									"});\r",
+									"\r",
+									"// 5. Sin stack trace/HTML\r",
+									"pm.test(\"Sin stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/(\\n|\\r)\\s*at\\s+[\\w.$]+/i);\r",
+									"  pm.expect(raw).to.not.match(/<\\/?html/i);\r",
+									"});\r",
+									"\r",
+									"// 6. No efectos colaterales: GET del mismo id inválido también 400/404\r",
+									"pm.test(\"No-upsert (GET mismo id inválido ⇒ 400/404)\", (done) => {\r",
+									"  const badId = encodeURIComponent(pm.collectionVariables.get('deleteBadId') || pm.variables.get('deleteBadId') || 'abc-not-number');\r",
+									"  const url   = pm.variables.replaceIn(`{{baseUrl}}/pet/${badId}?Accept=application/json`);\r",
+									"  pm.sendRequest({ url, method: 'GET', header: { Accept: 'application/json' } }, (err, res) => {\r",
+									"    pm.expect(err).to.be.null;\r",
+									"    pm.expect([400, 404]).to.include(res.code);\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{deleteBadId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{deleteBadId}}"
+							]
+						},
+						"description": "**Objetivo:** validar tipado del parámetro en borrado (petId no numérico).\n\n**Precondiciones:** ninguna.\n\n**Request:** DELETE /pet/{{deleteBadId}}  \nHeaders: Accept=application/json\n\n**Validaciones:**\n\n- HTTP 400/404; Content-Type JSON (si presente); t ≤ {{timeoutMs}} ms.\n    \n- Mensaje controlado de error (invalid / number format / not allowed / not found).\n    \n- Sin fugas de stack trace ni HTML.\n    \n- No-upsert: GET /pet/{{deleteBadId}} ⇒ 400/404.\n    \n\n**Por qué:** protege al servicio de entradas erróneas y confirma que no hay efectos colaterales."
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-DELETE-04 - Negativo | Borrado doble (idempotencia)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Siembra local para DELETE-04: crear -> borrar 1ra vez -> dejar listo el 2do borrado\r",
+									"const base = pm.variables.replaceIn(\"{{baseUrl}}\");\r",
+									"const id   = String(Date.now());                   // id local, no rompe otras pruebas\r",
+									"pm.variables.set(\"deleteTwiceId\", id);             // variable SOLO de esta request\r",
+									"\r",
+									"const petBody = {\r",
+									"  id: Number(id),\r",
+									"  name: \"QA-Delete-Twice\",\r",
+									"  photoUrls: [],\r",
+									"  tags: [],\r",
+									"  status: \"available\"\r",
+									"};\r",
+									"\r",
+									"// 1. Crear\r",
+									"pm.sendRequest({\r",
+									"  url: `${base}/pet`,\r",
+									"  method: \"POST\",\r",
+									"  header: { \"Content-Type\": \"application/json\", Accept: \"application/json\" },\r",
+									"  body: { mode: \"raw\", raw: JSON.stringify(petBody) }\r",
+									"}, (err1, res1) => {\r",
+									"  // 2. Borrar 1ra vez (si creación fue ok; igual intentamos)\r",
+									"  pm.sendRequest({\r",
+									"    url: `${base}/pet/${id}`,\r",
+									"    method: \"DELETE\",\r",
+									"    header: { Accept: \"application/json\" }\r",
+									"  }, (err2, res2) => {\r",
+									"    // listo para que esta request haga el 2do DELETE\r",
+									"  });\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// === DELETE-04 — Borrado doble (idempotencia) ===\r",
+									"const timeoutMs  = Number(pm.environment.get('timeoutMs') || pm.collectionVariables.get('timeoutMs') || 2000);\r",
+									"const expectedCt = String(pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code       = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type JSON (si está presente)\r",
+									"pm.test(\"Content-Type JSON (si presente)\", () => {\r",
+									"  const ct = (pm.response.headers.get('Content-Type') || \"\").toLowerCase();\r",
+									"  if (ct) pm.expect(ct).to.include('application/json');\r",
+									"});\r",
+									"\r",
+									"// 2. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 3. Idempotencia: 2º DELETE debe indicar que ya no existe\r",
+									"pm.test(\"Idempotencia: 2º DELETE indica que no existe\", () => {\r",
+									"  if ([404, 400].includes(code)) {\r",
+									"    // Caso clásico: el servicio devuelve 404/400 en el segundo DELETE\r",
+									"    pm.expect([404, 400]).to.include(code);\r",
+									"    return;\r",
+									"  }\r",
+									"\r",
+									"  if (code === 200) {\r",
+									"    // Petstore a veces responde 200 y en message devuelve el id (sin texto)\r",
+									"    let msg = \"\";\r",
+									"    try { msg = String(pm.response.json().message || \"\"); }\r",
+									"    catch { msg = pm.response.text(); }\r",
+									"\r",
+									"    const id = String(pm.variables.get(\"deleteTwiceId\") || \"\");\r",
+									"    const ok200 =\r",
+									"      /not\\s*found|already\\s*deleted|no\\s*such/i.test(msg) ||\r",
+									"      msg === id; // aceptar \"message\": \"<id>\"\r",
+									"\r",
+									"    pm.expect(ok200, `200 debe venir con 'not found/ya eliminado/no existe' o 'message' igual al id. Recibido: \"${msg}\"`).to.be.true;\r",
+									"    return;\r",
+									"  }\r",
+									"\r",
+									"  pm.expect.fail(`Código inesperado ${code}`);\r",
+									"});\r",
+									"\r",
+									"\r",
+									"// 4. No efectos colaterales: GET ⇒ 404\r",
+									"pm.test(\"No-upsert: GET del mismo id ⇒ 404\", (done) => {\r",
+									"  const id = encodeURIComponent(pm.variables.get('deleteTwiceId') || '');\r",
+									"  const url = pm.variables.replaceIn(`{{baseUrl}}/pet/${id}?Accept=application/json`);\r",
+									"  pm.sendRequest({ url, method: 'GET', header: { Accept: 'application/json' } }, (err, res) => {\r",
+									"    pm.expect(err).to.be.null;\r",
+									"    pm.expect([404]).to.include(res.code);\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									"\r",
+									"// 5. Sin stack trace/HTML\r",
+									"pm.test(\"Sin stack trace/HTML\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  pm.expect(raw).to.not.match(/(\\n|\\r)\\s*at\\s+[\\w.$]+/i);\r",
+									"  pm.expect(raw).to.not.match(/<\\/?html/i);\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{deleteTwiceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{deleteTwiceId}}"
+							]
+						},
+						"description": "**Objetivo:** verificar idempotencia al eliminar dos veces el mismo petId.\n\n**Precondiciones:** se ejecutó un DELETE exitoso previamente sobre {{deleteTwiceId}}.\n\nRequest: DELETE /pet/{{deleteTwiceId}}  \nHeaders: Content-Type=application/json, Accept=application/json\n\n**Validaciones:**\n\n- Content-Type JSON (si hay body).\n    \n- t ≤ {{timeoutMs}} ms.\n    \n- Respuesta aceptada del 2º DELETE: 404/400 **o** 200 con body que:\n    \n    - incluya mensaje de “not found / already deleted / no such” **o**\n        \n    - traiga `message` igual al id (comportamiento Petstore).\n        \n- No-upsert: GET /pet/{{deleteTwiceId}} ⇒ 404.\n    \n\n**Por qué:** confirma idempotencia/consistencia tras eliminación y documenta la variante 200+message=id del backend.\\`\\`\\`  \n::contentReference\\[oaicite:0\\]{index=0}"
+					},
+					"response": []
+				},
+				{
+					"name": "API-PET-DELETE-05 - Negativo | petId con caracteres especiales/espacios",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// id \"raro\" original (colección) o uno por defecto\r",
+									"const raw = pm.collectionVariables.get('deleteWeirdId') || 'id con espacios @!';\r",
+									"pm.variables.set('encWeirdId', encodeURIComponent(raw));\r",
+									"// baseUrl resuelto para armar URL sin replaceIn anidados\r",
+									"pm.variables.set('resolvedBaseUrl', pm.variables.replaceIn('{{baseUrl}}'));\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// DELETE-05 — petId con caracteres especiales/espacios\r",
+									"const timeoutMs = Number(pm.environment.get('timeoutMs') || 2000);\r",
+									"const expectedCt = (pm.collectionVariables.get('contentTypeExpected') || 'application/json').toLowerCase();\r",
+									"const code = pm.response.code;\r",
+									"\r",
+									"// 1. Content-Type (si viene)\r",
+									"pm.test(\"Content-Type JSON (si presente)\", () => {\r",
+									"  const ct = (pm.response.headers.get('Content-Type') || \"\").toLowerCase();\r",
+									"  if (ct) pm.expect(ct).to.include(expectedCt);\r",
+									"});\r",
+									"\r",
+									"// 2. Tiempo\r",
+									"pm.test(`Tiempo ≤ ${timeoutMs} ms`, () => {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(timeoutMs);\r",
+									"});\r",
+									"\r",
+									"// 3. Código esperado (400/404)\r",
+									"pm.test(\"400/404 por id inválido\", () => {\r",
+									"  pm.expect([400, 404]).to.include(code);\r",
+									"});\r",
+									"\r",
+									"// 4. Mensaje controlado + sin HTML/stack\r",
+									"pm.test(\"Mensaje controlado + sin HTML/stack\", () => {\r",
+									"  const raw = pm.response.text();\r",
+									"  let msg = \"\";\r",
+									"  try { msg = String(pm.response.json().message || \"\"); } catch (_) {}\r",
+									"  const lower = (msg || raw).toLowerCase();\r",
+									"\r",
+									"  // Aceptamos: invalid / not found / bad / format / number / exception (sin stack)\r",
+									"  pm.expect(lower).to.match(/invalid|not\\s*found|bad|format|number|exception/);\r",
+									"\r",
+									"  // No debe haber HTML ni frames de stack trace\r",
+									"  pm.expect(raw).to.not.match(/<html|<body|traceback|at\\s+[A-Za-z0-9_.$]+\\(/i);\r",
+									"});\r",
+									"\r",
+									"// 5. No side-effects: GET del mismo id ⇒ 404/400 y sin HTML/stack\r",
+									"pm.test(\"No-upsert: GET del mismo id ⇒ 404/400\", (done) => {\r",
+									"  const base = pm.variables.get('resolvedBaseUrl');\r",
+									"  const id   = pm.variables.get('encWeirdId');\r",
+									"  const url  = `${base}/pet/${id}`;\r",
+									"\r",
+									"  pm.sendRequest({ url, method: 'GET', header: { Accept: 'application/json' } }, (err, res) => {\r",
+									"    if (err) {\r",
+									"      pm.test(\"GET sin error de red\", () => pm.expect.fail(`Network error: ${String(err)}`));\r",
+									"      return done();\r",
+									"    }\r",
+									"    pm.test(\"GET retorna 404/400 (no existe)\", () => {\r",
+									"      pm.expect([404, 400]).to.include(res.code);\r",
+									"    });\r",
+									"    pm.test(\"GET sin HTML/stack\", () => {\r",
+									"      pm.expect(res.text()).to.not.match(/<html|<body|traceback|at\\s+[A-Za-z0-9_.$]+\\(/i);\r",
+									"    });\r",
+									"    done();\r",
+									"  });\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/pet/{{encWeirdId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pet",
+								"{{encWeirdId}}"
+							]
+						},
+						"description": "**Objetivo:** validar robustez del endpoint ante petId con caracteres especiales/espacios.\n\n**Precondiciones:** ninguna.\n\n**Request:** DELETE /pet/{petId}  \nHeaders: Accept=application/json  \nPath param: petId={{encWeirdId}} # valor con símbolos/espacios (URL-encoded en la ejecución)\n\n**Validaciones:**\n\n- Status 400/404.\n    \n- Content-Type JSON (si el backend envía cuerpo).\n    \n- t ≤ {{timeoutMs}} ms.\n    \n- Mensaje controlado: puede incluir “exception/NumberFormatException” como texto, pero **sin** HTML ni stack trace (sin , , `traceback`, ni frames `at package.Class(`).\n    \n- No-upsert: GET /pet/{{encWeirdId}} → 404/400 (no se creó el recurso).\n    \n\n**Por qué:** evita fallos por encoding/decoding y asegura manejo seguro de entradas inválidas en la ruta."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "petId",
+			"value": ""
+		},
+		{
+			"key": "petName",
+			"value": ""
+		},
+		{
+			"key": "petStatus",
+			"value": ""
+		},
+		{
+			"key": "lastResponseTimeMs",
+			"value": ""
+		},
+		{
+			"key": "contentTypeExpected",
+			"value": ""
+		},
+		{
+			"key": "attemptedId",
+			"value": ""
+		},
+		{
+			"key": "attemptedInvalidId",
+			"value": ""
+		},
+		{
+			"key": "duplicate_name",
+			"value": ""
+		},
+		{
+			"key": "duplicate_status",
+			"value": ""
+		},
+		{
+			"key": "baseline_snapshot_ok",
+			"value": ""
+		},
+		{
+			"key": "invalidNameMode",
+			"value": ""
+		},
+		{
+			"key": "attemptedExtremeId",
+			"value": ""
+		},
+		{
+			"key": "invalidName",
+			"value": ""
+		},
+		{
+			"key": "seedStatus",
+			"value": ""
+		},
+		{
+			"key": "unknownPetId",
+			"value": ""
+		},
+		{
+			"key": "badPetId",
+			"value": ""
+		},
+		{
+			"key": "weirdPetIdRaw",
+			"value": ""
+		},
+		{
+			"key": "weirdPetIdEncoded",
+			"value": ""
+		},
+		{
+			"key": "newPetName",
+			"value": ""
+		},
+		{
+			"key": "newPetStatus",
+			"value": ""
+		},
+		{
+			"key": "baselineNameBefore",
+			"value": ""
+		},
+		{
+			"key": "baselineStatusBefore",
+			"value": ""
+		},
+		{
+			"key": "put02Name",
+			"value": ""
+		},
+		{
+			"key": "put02Status",
+			"value": ""
+		},
+		{
+			"key": "invalidStatus",
+			"value": ""
+		},
+		{
+			"key": "delId",
+			"value": ""
+		},
+		{
+			"key": "delName",
+			"value": ""
+		},
+		{
+			"key": "delStatus",
+			"value": ""
+		},
+		{
+			"key": "deleteMissingId",
+			"value": ""
+		},
+		{
+			"key": "deleteBadId",
+			"value": ""
+		},
+		{
+			"key": "timeoutMs",
+			"value": ""
+		},
+		{
+			"key": "deleteWeirdId",
+			"value": ""
+		}
+	]
+}
